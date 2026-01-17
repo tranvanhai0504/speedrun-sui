@@ -1,36 +1,78 @@
-import Link from "next/link";
-import { Rocket } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import CardNav, { CardNavItem } from "@/components/CardNav";
+import { useAuth } from "@/hooks/useAuth";
+import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
+    const { isAuthenticated, signIn, isAuthenticating, signOut } = useAuth();
+    const currentAccount = useCurrentAccount();
+    const router = useRouter();
+
+    const navItems: CardNavItem[] = [
+        {
+            label: "Learn",
+            bgColor: "#BDE8F5", // Pale Cyan
+            textColor: "#0F2854", // Dark Blue
+            links: [
+                { label: "All Challenges", href: "/challenges", ariaLabel: "View all challenges" },
+                { label: "Documentation", href: "#", ariaLabel: "Read documentation" },
+                { label: "Tutorials", href: "#", ariaLabel: "Watch tutorials" },
+            ],
+        },
+        {
+            label: "Community",
+            bgColor: "#4988C4", // Light Blue
+            textColor: "#FFFFFF",
+            links: [
+                { label: "Leaderboard", href: "#", ariaLabel: "View leaderboard" },
+                { label: "Builders Directory", href: "#", ariaLabel: "Find other builders" },
+                { label: "Discord", href: "#", ariaLabel: "Join Discord" },
+            ],
+        },
+        {
+            label: "Resources",
+            bgColor: "#1C4D8D", // Medium Blue
+            textColor: "#FFFFFF",
+            links: [
+                { label: "Sui Documentation", href: "#", ariaLabel: "Official Sui Docs" },
+                { label: "Move Book", href: "#", ariaLabel: "Move Language Book" },
+                { label: "Faucet", href: "#", ariaLabel: "Testnet Faucet" },
+            ],
+        },
+    ];
+
+    let actionLabel = "Connect Wallet";
+    let onAction = undefined;
+    let customActionComponent = undefined;
+
+    if (!currentAccount) {
+        customActionComponent = (
+            <ConnectButton
+                className="!bg-[#BDE8F5] !text-[#0F2854] !font-bold !border-2 !border-[#0F2854] !shadow-[2px_2px_0px_0px_#0F2854] !rounded-xl !h-full !px-4 hover:!translate-x-[1px] hover:!translate-y-[1px] hover:!shadow-none transition-all"
+            />
+        );
+    } else {
+        if (isAuthenticated) {
+            actionLabel = `${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)}`;
+            onAction = () => router.push(`/builder/${currentAccount.address}`);
+        } else {
+            actionLabel = isAuthenticating ? "Signing In..." : "Sign In";
+            onAction = signIn;
+        }
+    }
+
     return (
-        <nav className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 mx-4 md:mx-auto max-w-6xl bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-full">
-            <div className="flex items-center gap-2">
-                <Link href="/" className="flex items-center gap-2 font-black text-2xl text-black tracking-tighter">
-                    <div className="bg-primary text-black border-2 border-black p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                        <Rocket className="h-5 w-5" />
-                    </div>
-                    <span>SPEEDRUN SUI</span>
-                </Link>
-            </div>
-
-            <div className="hidden md:flex items-center gap-8">
-                <Link href="/challenges" className="font-bold text-black hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4">
-                    Challenges
-                </Link>
-                <Link href="#" className="font-bold text-black hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4">
-                    Leaderboard
-                </Link>
-                <Link href="#" className="font-bold text-black hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4">
-                    Docs
-                </Link>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <Button variant="secondary" className="rounded-full">
-                    Connect Wallet
-                </Button>
-            </div>
-        </nav>
+        <CardNav
+            items={navItems}
+            baseColor="#FFFFFF"
+            menuColor="#0F2854"
+            buttonBgColor="#BDE8F5"
+            buttonTextColor="#0F2854"
+            actionLabel={actionLabel}
+            onAction={onAction}
+            customActionComponent={customActionComponent}
+        />
     );
 }
