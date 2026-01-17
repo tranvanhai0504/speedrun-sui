@@ -1,5 +1,5 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { getChallenges, getChallenge, getBuilderProfile, verifyChallenge, updateProfile, getLeaderboard } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getChallenges, getChallenge, getBuilderProfile, verifyChallenge, updateProfile, getLeaderboard, getAdminStats, createChallenge, updateChallenge, deleteChallenge, getUsers } from "@/lib/api";
 
 export function useChallenges() {
     return useQuery({
@@ -42,4 +42,37 @@ export function useLeaderboard(limit: number = 50, cursor?: string) {
         queryKey: ["leaderboard", limit, cursor],
         queryFn: () => getLeaderboard(limit, cursor),
     });
+}
+
+export function useAdminStats() {
+    return useQuery({
+        queryKey: ["admin", "stats"],
+        queryFn: getAdminStats,
+    });
+}
+
+export function useAdminUsers() {
+    return useQuery({
+        queryKey: ["admin", "users"],
+        queryFn: () => getUsers(),
+    });
+}
+
+export function useAdminChallengeMutation() {
+    const queryClient = useQueryClient();
+
+    return {
+        create: useMutation({
+            mutationFn: createChallenge,
+            onSuccess: () => queryClient.invalidateQueries({ queryKey: ["challenges"] }),
+        }),
+        update: useMutation({
+            mutationFn: ({ id, data }: { id: string; data: any }) => updateChallenge(id, data),
+            onSuccess: () => queryClient.invalidateQueries({ queryKey: ["challenges"] }),
+        }),
+        delete: useMutation({
+            mutationFn: deleteChallenge,
+            onSuccess: () => queryClient.invalidateQueries({ queryKey: ["challenges"] }),
+        }),
+    };
 }

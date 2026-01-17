@@ -127,3 +127,56 @@ export async function getLeaderboard(limit: number = 50, cursor?: string): Promi
     }
     return apiFetch(`/leaderboard?${params.toString()}`);
 }
+
+// Admin Types
+export interface AdminStats {
+    total_users: number;
+    total_submissions: number;
+    active_users_7d: number;
+}
+
+export interface UploadUrlResponse {
+    upload_url: string;
+    public_url: string;
+}
+
+export interface UserListResponse {
+    users: BuilderProfile[];
+    count: number;
+}
+
+// Admin API
+export async function getAdminStats(): Promise<AdminStats> {
+    return apiFetch('/admin/stats');
+}
+
+export async function getUploadUrl(fileName: string, contentType: string): Promise<UploadUrlResponse> {
+    return apiFetch('/admin/upload-url', {
+        method: 'POST',
+        body: JSON.stringify({ file_name: fileName, content_type: contentType }),
+    });
+}
+
+export async function createChallenge(challenge: Partial<Challenge>): Promise<Challenge> {
+    return apiFetch('/admin/challenges', {
+        method: 'POST',
+        body: JSON.stringify(challenge),
+    });
+}
+
+export async function updateChallenge(id: string, challenge: Partial<Challenge>): Promise<Challenge> {
+    return apiFetch(`/admin/challenges/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(challenge),
+    });
+}
+
+export async function deleteChallenge(id: string): Promise<void> {
+    return apiFetch(`/admin/challenges/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function getUsers(limit: number = 50, cursor?: string): Promise<UserListResponse> {
+    return apiFetch('/admin/users');
+}
