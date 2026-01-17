@@ -3,6 +3,8 @@ import GradientText from "@/components/GradientText";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import HacknativeSVG from "@/components/animationSVG/HacknativeSVG";
+import Image from "next/image";
+import { motion } from "framer-motion";
 
 export function Hero() {
     return (
@@ -65,6 +67,26 @@ export function Hero() {
                 <div className="relative flex items-center justify-center">
                     <div className="transform scale-150 hover:scale-[1.6] transition-transform duration-500">
                         <HacknativeSVG />
+                    </div>
+                    <motion.div
+                        className="absolute z-0 size-32 pointer-events-none top-5 right-40"
+                        animate={{ y: [0, -20, 0] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                        <Image
+                            src="/sui-coin.png"
+                            alt="Hero Background"
+                            fill
+                            className="object-contain"
+                        />
+                    </motion.div>
+                    <div className="absolute z-0 size-42 pointer-events-none -bottom-20 -left-0 rotate-80">
+                        <Image
+                            src="/fm-coin.png"
+                            alt="Hero Background"
+                            fill
+                            className="object-contain"
+                        />
                     </div>
                 </div>
             </div>

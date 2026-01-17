@@ -84,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </nav>
 
                 <div className="p-4 border-t-2 border-[#E5E5EA] space-y-2">
-                    <Link href="/challenges">
+                    <Link href="/">
                         <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 hover:text-[#0F2854] transition-all">
                             <ArrowLeft className="h-5 w-5" />
                             Back to App

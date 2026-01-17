@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, Users, Zap } from "lucide-react";
+import { Rocket, Users, Zap } from "lucide-react";
 
 export function Footer() {
     return (
         <footer className="py-12 border-t-2 border-black bg-white text-center">
             <div className="container mx-auto px-20 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="font-black text-xl flex items-center gap-2">
-                    <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white">
-                        <Sparkles size={16} />
+                    <div className="bg-[#4988C4] text-white border-2 border-[#0F2854] p-1.5 rounded-lg shadow-[2px_2px_0px_0px_#0F2854]">
+                        <Rocket className="h-4 w-4" />
                     </div>
                     SPEEDRUN SUI
                 </div>

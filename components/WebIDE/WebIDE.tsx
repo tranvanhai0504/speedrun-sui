@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Maximize2, Minimize2 } from "lucide-react";
 import {
     ResizableHandle,
     ResizablePanel,
@@ -24,7 +23,6 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
     const [selectedFile, setSelectedFile] = useState<string>("");
     const [code, setCode] = useState(initialCode);
     const [filename, setFilename] = useState("untitled.move");
-    const [isFullscreen, setIsFullscreen] = useState(false);
     const [files, setFiles] = useState<Record<string, string>>({});
     const [projectId, setProjectId] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([
@@ -191,27 +189,11 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
     };
 
     return (
-        <div className={`${isFullscreen
-            ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[96vw] h-[92vh] z-50 bg-[#1e2029] p-4 rounded-xl border-2 border-[#4988C4] shadow-2xl'
-            : 'relative'
-            } transition-all duration-300`}>
-            {/* Fullscreen Toggle Button */}
-            <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="absolute top-4 right-4 z-10 p-2 bg-[#2a2d39] hover:bg-[#3a3d49] rounded-lg border border-[#4988C4] transition-colors shadow-lg"
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-                {isFullscreen ? (
-                    <Minimize2 className="h-4 w-4 text-[#4988C4]" />
-                ) : (
-                    <Maximize2 className="h-4 w-4 text-[#4988C4]" />
-                )}
-            </button>
+        <div className="relative transition-all duration-300">
 
             <ResizablePanelGroup
                 orientation="horizontal"
-                className={`${isFullscreen ? 'h-full' : 'min-h-[650px]'
-                    } border border-[#2a2d39] overflow-hidden bg-[#1e2029] shadow-2xl`}
+                className="min-h-[650px] border border-[#2a2d39] overflow-hidden bg-[#1e2029] shadow-2xl"
             >
                 {/* File Explorer */}
                 <ResizablePanel defaultSize={18} minSize={12} maxSize={300}>

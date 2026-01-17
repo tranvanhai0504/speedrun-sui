@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Terminal, X, Maximize2, Minimize2 } from "lucide-react";
+import { Terminal, X, Maximize2, Minimize2, Minus } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 
 const WebIDE = dynamic(() => import("@/components/WebIDE/WebIDE"), { ssr: false });
@@ -115,7 +115,7 @@ export function ChallengeIDE() {
                                     className="p-2 hover:bg-white/20 rounded transition-colors"
                                     title="Close"
                                 >
-                                    <X className="h-5 w-5" />
+                                    <Minus className="h-5 w-5" />
                                 </button>
                             </div>
                         </motion.div>
