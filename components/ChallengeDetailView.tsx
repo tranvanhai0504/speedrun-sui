@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Terminal, CheckCircle2, Lock, PlayCircle, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useChallenge, useChallenges, useVerifyChallenge } from "@/hooks/useApi";
+import { useBuilderProfile, useChallenge, useChallenges, useVerifyChallenge } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +16,29 @@ interface ChallengeDetailViewProps {
 
 export default function ChallengeDetailView({ id }: ChallengeDetailViewProps) {
     const { data: challenge, isLoading: isLoadingChallenge, error: challengeError } = useChallenge(id);
-    const { data: allChallenges, isLoading: isLoadingList } = useChallenges();
+    const { data: challenges, isLoading: isLoadingList } = useChallenges();
     const { isAuthenticated, user } = useAuth();
+    const { data: profile } = useBuilderProfile(user?.address || "");
     const verifyMutation = useVerifyChallenge();
+
+    const allChallenges = challenges?.map((c, index) => {
+        const completedChallenges = profile?.completed_challenges || [];
+        const isCompleted = completedChallenges.includes(c.challenge_id);
+        const isPreviousCompleted = index > 0 && completedChallenges.includes(challenges[index - 1].challenge_id);
+
+        let status: "locked" | "open" | "completed" = "locked";
+
+        if (isCompleted) {
+            status = "completed" as const;
+        } else if (index === 0 || isPreviousCompleted) {
+            status = "open" as const;
+        }
+
+        return {
+            ...c,
+            status
+        };
+    }) || [];
 
     const [packageId, setPackageId] = useState("");
     const [digest, setDigest] = useState("");

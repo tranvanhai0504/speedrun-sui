@@ -1,12 +1,33 @@
 "use client";
 
 import { ChallengeCard } from "@/components/ChallengeCard";
-import { useChallenges } from "@/hooks/useApi";
+import { useBuilderProfile, useChallenges } from "@/hooks/useApi";
 import { cn } from "@/lib/utils";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export function Curriculum() {
+    const currentAccount = useCurrentAccount();
     const { data: challenges, isLoading, error } = useChallenges();
-    const sortedChallenges = challenges?.sort((a, b) => Number(a.challenge_id) - Number(b.challenge_id));
+    const { data: profile } = useBuilderProfile(currentAccount?.address || "");
+
+    const sortedChallenges = challenges?.sort((a, b) => Number(a.challenge_id) - Number(b.challenge_id)).map((challenge, index, array) => {
+        const completedChallenges = profile?.completed_challenges || [];
+        const isCompleted = completedChallenges.includes(challenge.challenge_id);
+        const isPreviousCompleted = index > 0 && completedChallenges.includes(array[index - 1].challenge_id);
+
+        let status: "locked" | "open" | "completed" = "locked";
+
+        if (isCompleted) {
+            status = "completed" as const;
+        } else if (index === 0 || isPreviousCompleted) {
+            status = "open" as const;
+        }
+
+        return {
+            ...challenge,
+            status
+        };
+    });
 
     return (
         <section className="py-24 container mx-auto px-4 md:px-20 relative overflow-hidden">
@@ -50,7 +71,7 @@ export function Curriculum() {
                             Failed to load curriculum.
                         </div>
                     ) : (
-                        challenges?.map((challenge, index) => {
+                        sortedChallenges?.map((challenge, index) => {
                             const isEven = index % 2 === 0;
                             return (
                                 <div key={challenge.challenge_id} className={cn(
