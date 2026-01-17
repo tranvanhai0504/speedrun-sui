@@ -13,6 +13,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const [isAuthorized, setIsAuthorized] = useState(false);
 
+    console.log(isAuthenticated, isAuthenticating)
+
     // Mock admin check - in real app this would check a claim or whitelist
     // For now we trust the API to block non-admins, but we can do a client-side
     // check if we have the list or a flag in the user object.

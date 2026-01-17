@@ -7,9 +7,9 @@ import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/UserMenu";
 
 export function Navbar() {
-    const { isAuthenticated, signIn, isAuthenticating, signOut } = useAuth();
+    const { isAuthenticated, signIn, isAuthenticating, signOut, isAdmin } = useAuth();
+    console.log("admin", isAdmin);
     const currentAccount = useCurrentAccount();
-    const router = useRouter();
 
     const navItems: CardNavItem[] = [
         {
@@ -62,6 +62,7 @@ export function Navbar() {
                     address={currentAccount.address}
                     onSignOut={signOut}
                     actionLabel={actionLabel}
+                    isAdmin={isAdmin}
                 />
             );
         } else {

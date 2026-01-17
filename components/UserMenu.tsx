@@ -8,7 +8,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Wallet, LogOut, User, Copy } from "lucide-react";
+import { Wallet, LogOut, User, Copy, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface UserMenuProps {
@@ -17,9 +17,10 @@ interface UserMenuProps {
     actionLabel: string;
     buttonBgColor?: string;
     buttonTextColor?: string;
+    isAdmin?: boolean;
 }
 
-export function UserMenu({ address, onSignOut, actionLabel, buttonBgColor = "#BDE8F5", buttonTextColor = "#0F2854" }: UserMenuProps) {
+export function UserMenu({ address, onSignOut, actionLabel, buttonBgColor = "#BDE8F5", buttonTextColor = "#0F2854", isAdmin = false }: UserMenuProps) {
     const router = useRouter();
 
     const copyToClipboard = () => {
@@ -49,6 +50,15 @@ export function UserMenu({ address, onSignOut, actionLabel, buttonBgColor = "#BD
                     <User className="mr-2 h-4 w-4" />
                     <span>Portfolio</span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                    <DropdownMenuItem
+                        onClick={() => router.push("/admin")}
+                        className="cursor-pointer font-medium text-[#0F2854] hover:bg-secondary/20 hover:text-[#0F2854] focus:bg-secondary/20 focus:text-[#0F2854]"
+                    >
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Admin</span>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                     onClick={copyToClipboard}
                     className="cursor-pointer font-medium text-[#0F2854] hover:bg-secondary/20 hover:text-[#0F2854] focus:bg-secondary/20 focus:text-[#0F2854]"

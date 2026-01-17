@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Navbar } from "@/components/Navbar";
 import { Providers } from "@/app/providers";
 import "@fontsource/nunito/400.css";
 import "@fontsource/nunito/700.css";
@@ -20,7 +19,6 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <Providers>
-          <Navbar />
           {children}
         </Providers>
       </body>

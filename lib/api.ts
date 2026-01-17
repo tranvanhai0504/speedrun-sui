@@ -44,11 +44,16 @@ export interface BuilderProfile {
 interface AuthResponse {
     token: string;
     address: string;
+    is_admin: boolean;
 }
 
 export const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('jwt_token') : null;
 export const setToken = (token: string) => typeof window !== 'undefined' && localStorage.setItem('jwt_token', token);
 export const removeToken = () => typeof window !== 'undefined' && localStorage.removeItem('jwt_token');
+
+export async function getMe(): Promise<{ address: string; is_admin: boolean }> {
+    return apiFetch('/auth/me');
+}
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = getToken();
