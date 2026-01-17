@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import {
     ResizableHandle,
     ResizablePanel,
@@ -10,6 +11,8 @@ import FileExplorer from "./FileExplorer";
 import Editor from "./Editor";
 import Terminal from "./Terminal";
 import ActionToolbar from "./ActionToolbar";
+import { compileCode, saveProject, getProject, IDEProject } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 interface WebIDEProps {
     initialCode?: string;
@@ -17,9 +20,13 @@ interface WebIDEProps {
 }
 
 export default function WebIDE({ initialCode = "// Start coding...", onCodeChange }: WebIDEProps) {
+    const { isAuthenticated, user } = useAuth();
     const [selectedFile, setSelectedFile] = useState<string>("");
     const [code, setCode] = useState(initialCode);
     const [filename, setFilename] = useState("untitled.move");
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [files, setFiles] = useState<Record<string, string>>({});
+    const [projectId, setProjectId] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([
         "> SpeedrunSui Web IDE Ready",
         "> Select a file from the explorer or start coding",
@@ -27,7 +34,80 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
     ]);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Load project from localStorage on mount
+    useEffect(() => {
+        const savedProjectId = localStorage.getItem('ide_project_id');
+        if (savedProjectId && isAuthenticated) {
+            loadProject(savedProjectId);
+        }
+    }, [isAuthenticated]);
+
+    const loadProject = async (id: string) => {
+        try {
+            const project = await getProject(id);
+            setFiles(project.files);
+            setProjectId(project.id || null);
+            addLog(`> Loaded project: ${project.name}`);
+
+            // Load first file
+            const firstFile = Object.keys(project.files)[0];
+            if (firstFile) {
+                setSelectedFile(firstFile);
+                setFilename(firstFile);
+                setCode(project.files[firstFile]);
+            }
+        } catch (error: any) {
+            addLog(`> Failed to load project: ${error.message}`);
+        }
+    };
+
+    const handleSaveProject = async () => {
+        if (!isAuthenticated) {
+            addLog("> Please sign in to save projects");
+            return;
+        }
+
+        setIsLoading(true);
+        addLog("> Saving project...");
+
+        try {
+            // Update files with current code
+            const updatedFiles = {
+                ...files,
+                [filename]: code
+            };
+
+            const project: IDEProject = {
+                id: projectId || undefined,
+                name: `SpeedrunSui Project ${new Date().toISOString().split('T')[0]}`,
+                description: "Created in Web IDE",
+                files: updatedFiles
+            };
+
+            const savedProject = await saveProject(project);
+            setProjectId(savedProject.id || null);
+            setFiles(updatedFiles);
+
+            if (savedProject.id) {
+                localStorage.setItem('ide_project_id', savedProject.id);
+            }
+
+            addLog("> ✓ Project saved successfully!");
+            addLog(`> Project ID: ${savedProject.id}`);
+        } catch (error: any) {
+            addLog("> ✗ Failed to save project:");
+            addLog(error.message || "Unknown error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleFileSelect = (path: string, content: string) => {
+        // Save current file before switching
+        if (filename && code) {
+            setFiles(prev => ({ ...prev, [filename]: code }));
+        }
+
         setSelectedFile(path);
         setCode(content);
         setFilename(path.split('/').pop() || 'untitled.move');
@@ -49,12 +129,37 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
         setIsLoading(true);
         addLog(`> Compiling ${filename}...`);
 
-        // Simulate compilation
-        setTimeout(() => {
-            addLog("> ✓ Compilation successful!");
-            addLog("> Build artifacts saved to build/");
+        try {
+            // Save current file to files object
+            const currentFiles = {
+                ...files,
+                [filename]: code
+            };
+
+            // Create Move.toml if not exists
+            const filesToCompile: Record<string, string> = {
+                ...currentFiles,
+                "Move.toml": currentFiles["Move.toml"] || `[package]\nname = "SpeedrunSui"\nversion = "0.0.1"\n\n[dependencies]\nSui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }\n\n[addresses]\nspeedrun = "0x0"`
+            };
+
+            const result = await compileCode(filesToCompile);
+
+            if (result.error) {
+                addLog("> ✗ Compilation failed:");
+                addLog(result.error);
+            } else {
+                addLog("> ✓ Compilation successful!");
+                addLog("> Build artifacts ready");
+                if (result.bytecode) {
+                    addLog(`> Bytecode size: ${result.bytecode.length} bytes`);
+                }
+            }
+        } catch (error: any) {
+            addLog("> ✗ Compilation error:");
+            addLog(error.message || "Unknown error");
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     const handleTest = async () => {
@@ -86,47 +191,73 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
     };
 
     return (
-        <ResizablePanelGroup
-            direction="horizontal"
-            className="min-h-[600px] border-2 border-[#0F2854] rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_#0F2854]"
-        >
-            {/* File Explorer */}
-            <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-                <FileExplorer onFileSelect={handleFileSelect} selectedFile={selectedFile} />
-            </ResizablePanel>
+        <div className={`${isFullscreen
+            ? 'fixed inset-0 z-50 bg-[#1e2029] p-4'
+            : 'relative'
+            } transition-all duration-300`}>
+            {/* Fullscreen Toggle Button */}
+            <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="absolute top-4 right-4 z-10 p-2 bg-[#2a2d39] hover:bg-[#3a3d49] rounded-lg border border-[#4988C4] transition-colors shadow-lg"
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+                {isFullscreen ? (
+                    <Minimize2 className="h-4 w-4 text-[#4988C4]" />
+                ) : (
+                    <Maximize2 className="h-4 w-4 text-[#4988C4]" />
+                )}
+            </button>
 
-            <ResizableHandle withHandle className="bg-[#0F2854] w-1" />
+            <ResizablePanelGroup
+                direction="horizontal"
+                className={`${isFullscreen ? 'h-full' : 'min-h-[650px]'
+                    } border border-[#2a2d39] rounded-lg overflow-hidden bg-[#1e2029] shadow-2xl`}
+            >
+                {/* File Explorer */}
+                <ResizablePanel defaultSize={18} minSize={12} maxSize={300}>
+                    <FileExplorer onFileSelect={handleFileSelect} selectedFile={selectedFile} />
+                </ResizablePanel>
 
-            {/* Editor + Terminal */}
-            <ResizablePanel defaultSize={80}>
-                <ResizablePanelGroup direction="vertical">
-                    {/* Editor with Toolbar */}
-                    <ResizablePanel defaultSize={70} minSize={40}>
-                        <div className="h-full flex flex-col">
-                            <ActionToolbar
-                                onCompile={handleCompile}
-                                onTest={handleTest}
-                                onDeploy={handleDeploy}
-                                isLoading={isLoading}
-                            />
-                            <div className="flex-1 overflow-hidden">
-                                <Editor
-                                    value={code}
-                                    onChange={handleCodeChange}
-                                    filename={filename}
+                <ResizableHandle
+                    withHandle
+                    className="bg-[#2a2d39] w-[4px] hover:bg-[#4988C4] transition-colors cursor-col-resize"
+                />
+
+                {/* Editor + Terminal */}
+                <ResizablePanel defaultSize={82}>
+                    <ResizablePanelGroup direction="vertical">
+                        {/* Editor with Toolbar */}
+                        <ResizablePanel defaultSize={65} minSize={35}>
+                            <div className="h-full flex flex-col">
+                                <ActionToolbar
+                                    onSave={handleSaveProject}
+                                    onCompile={handleCompile}
+                                    onTest={handleTest}
+                                    onDeploy={handleDeploy}
+                                    isLoading={isLoading}
                                 />
+                                <div className="flex-1 overflow-hidden">
+                                    <Editor
+                                        value={code}
+                                        onChange={handleCodeChange}
+                                        filename={filename}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </ResizablePanel>
+                        </ResizablePanel>
 
-                    <ResizableHandle withHandle className="bg-[#0F2854] h-1" />
+                        <ResizableHandle
+                            withHandle
+                            className="bg-[#2a2d39] h-[4px] hover:bg-[#4988C4] transition-colors cursor-row-resize"
+                        />
 
-                    {/* Terminal */}
-                    <ResizablePanel defaultSize={30} minSize={15}>
-                        <Terminal logs={logs} onClear={handleClearTerminal} />
-                    </ResizablePanel>
-                </ResizablePanelGroup>
-            </ResizablePanel>
-        </ResizablePanelGroup>
+                        {/* Terminal */}
+                        <ResizablePanel defaultSize={35} minSize={15}>
+                            <Terminal logs={logs} onClear={handleClearTerminal} />
+                        </ResizablePanel>
+                    </ResizablePanelGroup>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+        </div>
     );
 }

@@ -180,3 +180,57 @@ export async function deleteChallenge(id: string): Promise<void> {
 export async function getUsers(limit: number = 50, cursor?: string): Promise<UserListResponse> {
     return apiFetch('/admin/users');
 }
+
+// IDE API
+export interface CompileRequest {
+    files: Record<string, string>; // filename -> content
+}
+
+export interface CompileResponse {
+    bytecode: string;
+    error: string;
+}
+
+export async function compileCode(files: Record<string, string>): Promise<CompileResponse> {
+    const response = await fetch(`${API_URL}/ide/compile`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ files }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Compilation failed' }));
+        return {
+            bytecode: '',
+            error: error.error || error.message || 'Compilation failed'
+        };
+    }
+
+    return response.json();
+}
+
+export interface IDEProject {
+    id?: string;
+    name: string;
+    description?: string;
+    files: Record<string, string>;
+    created_at?: number;
+    updated_at?: number;
+}
+
+export async function saveProject(project: IDEProject): Promise<IDEProject> {
+    return apiFetch('/ide/project', {
+        method: 'POST',
+        body: JSON.stringify(project),
+    });
+}
+
+export async function getProject(id: string): Promise<IDEProject> {
+    return apiFetch(`/ide/project?id=${id}`);
+}
+
+export async function listProjects(): Promise<IDEProject[]> {
+    return apiFetch('/ide/projects');
+}
