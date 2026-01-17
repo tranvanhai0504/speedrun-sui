@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -10,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { useChallenge, useChallenges, useVerifyChallenge } from "@/hooks/useApi";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+
+const WebIDE = dynamic(() => import("./WebIDE/WebIDE"), { ssr: false });
 
 interface ChallengeDetailViewProps {
     id: string;
@@ -145,6 +148,14 @@ export default function ChallengeDetailView({ id }: ChallengeDetailViewProps) {
                                     <p className="italic text-gray-500">No instructions provided for this challenge yet.</p>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Web IDE */}
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-black text-[#0F2854] flex items-center gap-2">
+                                <Terminal className="h-6 w-6" /> Web IDE
+                            </h3>
+                            <WebIDE />
                         </div>
 
                         {/* Submission Section */}
