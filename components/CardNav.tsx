@@ -240,6 +240,7 @@ const CardNav: React.FC<CardNavProps> = ({
                     className="nav-card-link inline-flex items-center gap-[6px] no-underline cursor-pointer transition-all duration-300 hover:translate-x-1 text-[15px] md:text-[16px] font-bold"
                     href={lnk.href}
                     aria-label={lnk.ariaLabel}
+                    onClick={toggleMenu}
                   >
                     <GoArrowUpRight className="nav-card-link-icon shrink-0" aria-hidden="true" />
                     {lnk.label}

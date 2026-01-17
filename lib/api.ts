@@ -8,7 +8,8 @@ export interface Challenge {
     xp_reward: number;
     image_url: string;
     required_modules: string[];
-    status?: "locked" | "open" | "completed"; // Add status for frontend matching
+    status?: "locked" | "open" | "completed";
+    instructions?: string; // Markdown content
 }
 
 interface AuthResponse {
@@ -63,6 +64,17 @@ export async function getChallenges(): Promise<Challenge[]> {
     return apiFetch('/v1/challenges');
 }
 
+export async function getChallenge(id: string): Promise<Challenge> {
+    return apiFetch(`/v1/challenges/${id}`);
+}
+
 export async function getBuilderProfile(address: string): Promise<any> {
     return apiFetch(`/builders/${address}`);
+}
+
+export async function verifyChallenge(payload: { user_address: string, package_id: string, tx_digest: string, challenge_id: string }): Promise<any> {
+    return apiFetch('/v1/verify-challenge', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
 }

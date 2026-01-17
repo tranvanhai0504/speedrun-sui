@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getChallenges, getBuilderProfile } from "@/lib/api";
+import { getChallenges, getChallenge, getBuilderProfile, verifyChallenge } from "@/lib/api";
 
 export function useChallenges() {
     return useQuery({
@@ -9,10 +9,24 @@ export function useChallenges() {
     });
 }
 
+export function useChallenge(id: string) {
+    return useQuery({
+        queryKey: ["challenge", id],
+        queryFn: () => getChallenge(id),
+        enabled: !!id,
+    });
+}
+
 export function useBuilderProfile(address: string) {
     return useQuery({
         queryKey: ["builder", address],
         queryFn: () => getBuilderProfile(address),
         enabled: !!address,
+    });
+}
+
+export function useVerifyChallenge() {
+    return useMutation({
+        mutationFn: verifyChallenge,
     });
 }

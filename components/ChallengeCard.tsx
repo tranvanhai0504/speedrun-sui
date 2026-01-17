@@ -2,11 +2,15 @@ import Link from "next/link";
 import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Challenge } from "@/lib/challenges";
 import { cn } from "@/lib/utils";
 
-interface ChallengeCardProps {
-    challenge: Challenge;
+export interface ChallengeCardProps {
+    challenge: {
+        id: number | string;
+        title: string;
+        description: string;
+        status: "locked" | "open" | "completed";
+    };
 }
 
 export function ChallengeCard({ challenge }: ChallengeCardProps) {

@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import GradientText from "@/components/GradientText";
-import { ProgressDemo } from "@/components/ProgressDemo";
-import { ArrowRight, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import HacknativeSVG from "@/components/animationSVG/HacknativeSVG";
 
 export function Hero() {
     return (
@@ -35,7 +35,9 @@ export function Hero() {
                             Start Building Now <ArrowRight className="ml-2 h-5 w-5" />
                         </Button>
                         <Button variant="outline" size="lg" className="rounded-xl h-16 text-lg bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]">
-                            View Challenges
+                            <Link href="/challenges">
+                                View Challenges
+                            </Link>
                         </Button>
                     </div>
 
@@ -58,14 +60,9 @@ export function Hero() {
                 </div>
 
                 {/* Right Column: Visual */}
-                <div className="relative">
-                    {/* Decorative Elements */}
-                    <div className="absolute -top-10 -right-10 w-24 h-24 bg-secondary rounded-full border-2 border-black flex items-center justify-center animate-bounce duration-1000 z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <Zap className="h-10 w-10 text-black fill-white" />
-                    </div>
-
-                    <div className="bg-white p-2 rounded-[2rem] border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <ProgressDemo />
+                <div className="relative flex items-center justify-center">
+                    <div className="transform scale-150 hover:scale-[1.6] transition-transform duration-500">
+                        <HacknativeSVG />
                     </div>
                 </div>
             </div>

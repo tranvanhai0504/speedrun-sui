@@ -1,8 +1,12 @@
+"use client";
+
 import { ChallengeCard } from "@/components/ChallengeCard";
-import { challenges } from "@/lib/challenges";
+import { useChallenges } from "@/hooks/useApi";
 import { Sparkles } from "lucide-react";
 
 export default function ChallengesPage() {
+    const { data: challenges, isLoading, error } = useChallenges();
+
     return (
         <main className="min-h-screen pt-32 pb-20 bg-background">
             <div className="container mx-auto px-20">
@@ -19,11 +23,26 @@ export default function ChallengesPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {challenges.map((challenge) => (
-                        <div key={challenge.id} className="h-full">
-                            <ChallengeCard challenge={challenge} />
+                    {isLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse border-2 border-gray-200"></div>
+                        ))
+                    ) : error ? (
+                        <div className="col-span-full text-center text-red-500 font-bold p-8 border-2 border-red-200 bg-red-50 rounded-xl">
+                            Failed to load challenges. Please try again later.
                         </div>
-                    ))}
+                    ) : (
+                        challenges?.map((challenge) => (
+                            <div key={challenge.challenge_id} className="h-full">
+                                <ChallengeCard challenge={{
+                                    id: Number(challenge.challenge_id),
+                                    title: challenge.title,
+                                    description: challenge.description,
+                                    status: challenge.status || "locked",
+                                }} />
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </main>
