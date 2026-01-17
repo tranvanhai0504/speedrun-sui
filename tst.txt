@@ -1,0 +1,53 @@
+You are an expert Senior Frontend Engineer and UI/UX Designer specializing in Web3 Developer Platforms.
+
+Task: Create a high-fidelity React/Next.js functional prototype for "Speedrun Sui" – a gamified learning platform for Sui Move developers, inspired by speedrunethereum.com.
+
+Visual Style:
+
+Aesthetic: "Hacker-minimalist" with a focus on productivity. Use a clean "Developer" theme (either dark mode or a very crisp light mode).
+
+UI Elements: High-contrast typography (Inter or JetBrains Mono), subtle borders, and "card-based" challenge lists.
+
+Vibe: Professional yet gamified. Use progress bars, status badges (Completed, In Progress, Locked), and builder avatars.
+
+Key Components to Build:
+
+Navigation Bar: Include a logo "Speedrun Sui", a global "Builder Leaderboard" link, and a "Connect Wallet" button using a placeholder for Sui dApp Kit (zkLogin & Wallet support).
+
+Hero Section: A concise headline: "Master Sui Move by Building." Add a sub-headline: "Level up your Move skills by completing on-chain challenges. Start from a simple NFT and end with a complex DeFi Protocol."
+
+Challenge Grid: A list of cards representing the curriculum:
+
+Challenge 0: Simple Greeting (Introduction to Objects).
+
+Challenge 1: Create a Managed Coin (Treasury Caps).
+
+Challenge 2: Build a Decentralized Marketplace (Shared Objects & Kiosk).
+
+Challenge 3: Programmable Transaction Blocks (PTB Master).
+
+Challenge Detail View: * Left side: Instructions (Markdown style) and video embed placeholder.
+
+Right side: A "Submission Panel" with inputs for Package ID, Transaction Digest, and a prominent "Submit & Verify" button.
+
+Builder Stream: A sidebar or bottom section showing a real-time "Activity Feed" (e.g., "0x123...abc just completed Challenge 2!").
+
+Technical Requirements:
+
+Use Tailwind CSS for styling.
+
+Use Lucide-react for icons.
+
+The UI must be responsive and mobile-friendly.
+
+Implement a "Course Purchase" modal UI using Sui Payment Kit style (showing price in SUI and a 'Buy Now' button).
+
+Tips for Refining the Output
+If the initial generation is too generic, follow up with these specific instructions:
+
+For the "Sui" feel: "Add a visual representation of 'Sui Objects' appearing as cards with metadata tags (ID, Owner, Type) once a challenge is submitted."
+
+For the verification state: "Create a 'Verifying' state for the submit button that shows a terminal-like log: 'Checking Package ID...', 'Verifying Transaction...', 'Success! Level Up!'"
+
+For the Leaderboard: "Create a table showing 'Top Builders' with their SUI address, completed challenges count, and a 'Reputation Score' badge.
+

@@ -1,0 +1,157 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: 'Outfit', 'Inter', sans-serif;
+
+  --shadow-clay-card:
+    35px 35px 68px 0px rgba(145, 192, 255, 0.5),
+    inset -8px -8px 16px 0px rgba(145, 192, 255, 0.6),
+    inset 0px 11px 28px 0px rgb(255, 255, 255);
+
+  --shadow-clay-btn:
+    16px 16px 32px 0px rgba(145, 192, 255, 0.5),
+    inset -6px -6px 12px 0px rgba(0, 0, 0, 0.1),
+    inset 6px 6px 12px 0px rgba(255, 255, 255, 0.8);
+
+}
+
+/* 
+  Claymorphism Color Palette
+  Background: Soft Blue (#EAF4FF)
+  Primary: Vibrant Purple (#8B5Cf6)
+  Secondary: Bright Orange (#F97316)
+  Card: White (#FFFFFF)
+*/
+
+:root {
+  --background: 212 50% 96%;
+  /* #EAF4FF */
+  --foreground: 222 47% 11%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --primary: 262 83% 58%;
+  /* Purple */
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 24 94% 50%;
+  /* Orange */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 212 30% 90%;
+  --muted-foreground: 215 16% 47%;
+
+  --accent: 212 50% 92%;
+  --accent-foreground: 222 47% 11%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 212 30% 90%;
+  --input: 212 30% 90%;
+  --ring: 262 83% 58%;
+
+  --radius: 1.5rem;
+  /* Larger radius for clay look */
+}
+
+.dark {
+  /* Dark Clay Palette - Deep Purple/Blue */
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+
+  --card: 222 47% 14%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222 47% 14%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 262 83% 65%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 24 94% 60%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217 33% 20%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 217 33% 20%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217 33% 25%;
+  --input: 217 33% 25%;
+  --ring: 262 83% 65%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .clay-card {
+    background: var(--card);
+    border-radius: 30px;
+    box-shadow:
+      20px 20px 60px #bebebe,
+      -20px -20px 60px #ffffff;
+    /* Fallback shadow */
+  }
+
+  /* Use a more specific class for the "inflated" look if we want to override shadows easily */
+  .clay-md {
+    box-shadow:
+      8px 8px 16px 0px rgba(0, 0, 0, 0.05),
+      inset -4px -4px 8px 0px rgba(0, 0, 0, 0.05),
+      inset 4px 4px 8px 0px rgba(255, 255, 255, 0.8);
+    border-radius: var(--radius);
+  }
+
+  .text-shadow-sm {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
