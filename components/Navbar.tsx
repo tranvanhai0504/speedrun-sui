@@ -4,6 +4,7 @@ import CardNav, { CardNavItem } from "@/components/CardNav";
 import { useAuth } from "@/hooks/useAuth";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { useRouter } from "next/navigation";
+import { UserMenu } from "@/components/UserMenu";
 
 export function Navbar() {
     const { isAuthenticated, signIn, isAuthenticating, signOut } = useAuth();
@@ -26,7 +27,7 @@ export function Navbar() {
             bgColor: "#4988C4", // Light Blue
             textColor: "#FFFFFF",
             links: [
-                { label: "Leaderboard", href: "#", ariaLabel: "View leaderboard" },
+                { label: "Leaderboard", href: "/leaderboard", ariaLabel: "View leaderboard" },
                 { label: "Builders Directory", href: "#", ariaLabel: "Find other builders" },
                 { label: "Discord", href: "#", ariaLabel: "Join Discord" },
             ],
@@ -56,7 +57,13 @@ export function Navbar() {
     } else {
         if (isAuthenticated) {
             actionLabel = `${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)}`;
-            onAction = () => router.push(`/builder/${currentAccount.address}`);
+            customActionComponent = (
+                <UserMenu
+                    address={currentAccount.address}
+                    onSignOut={signOut}
+                    actionLabel={actionLabel}
+                />
+            );
         } else {
             actionLabel = isAuthenticating ? "Signing In..." : "Sign In";
             onAction = signIn;
