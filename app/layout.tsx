@@ -3,6 +3,7 @@ import "@fontsource/nunito/400.css";
 import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "Speedrun Sui",
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased font-sans bg-background text-foreground">
+        <Navbar />
         {children}
       </body>
     </html>

@@ -1,0 +1,31 @@
+import { ChallengeCard } from "@/components/ChallengeCard";
+import { challenges } from "@/lib/challenges";
+import { Sparkles } from "lucide-react";
+
+export default function ChallengesPage() {
+    return (
+        <main className="min-h-screen pt-32 pb-20 bg-background">
+            <div className="container mx-auto px-20">
+                <div className="text-center mb-16 max-w-3xl mx-auto">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary text-white font-bold text-sm border-2 border-[#0F2854] shadow-[4px_4px_0px_0px_#0F2854] mb-6">
+                        <Sparkles className="h-4 w-4" /> Level Up Your Skills
+                    </div>
+                    <h1 className="text-5xl md:text-6xl font-black text-[#0F2854] mb-6">
+                        Speedrun Challenges
+                    </h1>
+                    <p className="text-xl font-medium text-gray-600 bg-white inline-block px-6 py-2 rounded-full border-2 border-[#0F2854] shadow-[4px_4px_0px_0px_#0F2854]">
+                        Master Sui Move by Building Real Projects
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {challenges.map((challenge) => (
+                        <div key={challenge.id} className="h-full">
+                            <ChallengeCard challenge={challenge} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </main>
+    );
+}

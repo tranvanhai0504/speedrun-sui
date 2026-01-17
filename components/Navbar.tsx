@@ -15,7 +15,7 @@ export function Navbar() {
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-                <Link href="#" className="font-bold text-black hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4">
+                <Link href="/challenges" className="font-bold text-black hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4">
                     Challenges
                 </Link>
                 <Link href="#" className="font-bold text-black hover:text-primary transition-colors hover:underline decoration-2 underline-offset-4">
