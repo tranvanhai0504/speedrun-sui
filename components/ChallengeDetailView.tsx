@@ -100,45 +100,14 @@ export default function ChallengeDetailView({ id }: ChallengeDetailViewProps) {
         );
     }
 
+    // Find current challenge index and neighbors
+    const currentIndex = allChallenges.findIndex(c => c.challenge_id === id);
+    const previousChallenge = currentIndex > 0 ? allChallenges[currentIndex - 1] : null;
+    const nextChallenge = currentIndex < allChallenges.length - 1 ? allChallenges[currentIndex + 1] : null;
+
     return (
         <div className="min-h-screen pt-32 pb-12 container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row gap-8">
-                {/* Left Sidebar: Challenge Navigation */}
-                <aside className="w-full lg:w-80 flex-shrink-0">
-                    <div className="sticky top-32 space-y-4">
-                        <div className="p-4 bg-white rounded-xl border-2 border-[#0F2854] shadow-[4px_4px_0px_0px_#0F2854]">
-                            <h3 className="font-black text-xl mb-4 text-[#0F2854] uppercase tracking-tight">Challenges</h3>
-                            <nav className="space-y-2">
-                                {allChallenges?.map((c) => {
-                                    const isActive = c.challenge_id === id;
-                                    const isLocked = c.status === "locked";
-                                    return (
-                                        <Link
-                                            key={c.challenge_id}
-                                            href={isLocked ? "#" : `/challenges/${c.challenge_id}`}
-                                            className={cn(
-                                                "block w-full text-left px-4 py-3 rounded-lg border-2 transition-all font-bold text-sm",
-                                                isActive
-                                                    ? "bg-[#0F2854] text-white border-[#0F2854] shadow-[2px_2px_0px_0px_#4988C4] translate-x-[2px] translate-y-[2px]"
-                                                    : isLocked
-                                                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                                        : "bg-white text-[#0F2854] border-[#0F2854] hover:bg-secondary/20 hover:shadow-[2px_2px_0px_0px_#0F2854] hover:-translate-y-0.5"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-mono opacity-80">#{c.challenge_id}</span>
-                                                <span className="truncate">{c.title}</span>
-                                                {isLocked && <Lock className="ml-auto h-3 w-3" />}
-                                                {c.status === "completed" && <CheckCircle2 className="ml-auto h-3 w-3 text-green-500" />}
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        </div>
-                    </div>
-                </aside>
-
+            <div className="flex flex-col gap-8">
                 {/* Main Content: Instructions & Submission */}
                 <main className="flex-1 min-w-0">
                     {/* Challenge Header */}
@@ -239,6 +208,84 @@ export default function ChallengeDetailView({ id }: ChallengeDetailViewProps) {
                         </div>
                     </div>
                 </main>
+
+                {/* Bottom Challenge Navigation */}
+                <div className="mt-8 p-6 bg-white rounded-xl border-2 border-[#0F2854] shadow-[4px_4px_0px_0px_#0F2854]">
+                    <h3 className="font-black text-xl mb-4 text-[#0F2854] uppercase tracking-tight text-center">Challenge Navigation</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Previous Challenge */}
+                        <div className="flex flex-col">
+                            {previousChallenge ? (
+                                <Link
+                                    href={`/challenges/${previousChallenge.challenge_id}`}
+                                    className="flex flex-col gap-2 p-4 rounded-lg border-2 border-[#0F2854] bg-white hover:bg-secondary/20 hover:shadow-[2px_2px_0px_0px_#0F2854] hover:-translate-y-0.5 transition-all"
+                                >
+                                    <span className="text-xs text-gray-500 font-bold uppercase">Previous</span>
+                                    <div className="flex items-center gap-2">
+                                        <ArrowLeft className="h-4 w-4 text-[#0F2854]" />
+                                        <div>
+                                            <div className="font-mono text-sm text-[#0F2854]">#{previousChallenge.challenge_id}</div>
+                                            <div className="font-bold text-[#0F2854]">{previousChallenge.title}</div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ) : (
+                                <div className="flex flex-col gap-2 p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-50">
+                                    <span className="text-xs text-gray-400 font-bold uppercase">Previous</span>
+                                    <div className="text-sm text-gray-400">No previous challenge</div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Current Challenge */}
+                        <div className="flex flex-col">
+                            <div className="flex flex-col gap-2 p-4 rounded-lg border-2 border-[#0F2854] bg-[#0F2854] text-white shadow-[2px_2px_0px_0px_#4988C4]">
+                                <span className="text-xs text-white/70 font-bold uppercase">Current</span>
+                                <div>
+                                    <div className="font-mono text-sm">#{challenge.challenge_id}</div>
+                                    <div className="font-bold text-lg">{challenge.title}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Next Challenge */}
+                        <div className="flex flex-col">
+                            {nextChallenge ? (
+                                nextChallenge.status === "locked" ? (
+                                    <div className="flex flex-col gap-2 p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-50">
+                                        <span className="text-xs text-gray-400 font-bold uppercase">Next</span>
+                                        <div className="flex items-center gap-2">
+                                            <Lock className="h-4 w-4 text-gray-400" />
+                                            <div>
+                                                <div className="font-mono text-sm text-gray-400">#{nextChallenge.challenge_id}</div>
+                                                <div className="font-bold text-gray-400">{nextChallenge.title}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Link
+                                        href={`/challenges/${nextChallenge.challenge_id}`}
+                                        className="flex flex-col gap-2 p-4 rounded-lg border-2 border-[#0F2854] bg-white hover:bg-secondary/20 hover:shadow-[2px_2px_0px_0px_#0F2854] hover:-translate-y-0.5 transition-all"
+                                    >
+                                        <span className="text-xs text-gray-500 font-bold uppercase">Next</span>
+                                        <div className="flex items-center gap-2 justify-end">
+                                            <div className="text-right">
+                                                <div className="font-mono text-sm text-[#0F2854]">#{nextChallenge.challenge_id}</div>
+                                                <div className="font-bold text-[#0F2854]">{nextChallenge.title}</div>
+                                            </div>
+                                            <Circle className="h-4 w-4 text-[#0F2854]" />
+                                        </div>
+                                    </Link>
+                                )
+                            ) : (
+                                <div className="flex flex-col gap-2 p-4 rounded-lg border-2 border-gray-200 bg-gray-100 opacity-50">
+                                    <span className="text-xs text-gray-400 font-bold uppercase">Next</span>
+                                    <div className="text-sm text-gray-400">No next challenge</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
