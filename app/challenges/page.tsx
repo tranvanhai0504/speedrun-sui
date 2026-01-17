@@ -1,11 +1,33 @@
 "use client";
 
 import { ChallengeCard } from "@/components/ChallengeCard";
-import { useChallenges } from "@/hooks/useApi";
+import { useBuilderProfile, useChallenges } from "@/hooks/useApi";
 import { Sparkles } from "lucide-react";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export default function ChallengesPage() {
+    const currentAccount = useCurrentAccount();
     const { data: challenges, isLoading, error } = useChallenges();
+    const { data: profile, isLoading: isLoadingProfile, refetch } = useBuilderProfile(currentAccount?.address || "");
+
+    const personalChallenges = challenges?.map((challenge, index) => {
+        const completedChallenges = profile?.completed_challenges || [];
+        const isCompleted = completedChallenges.includes(challenge.challenge_id);
+        const isPreviousCompleted = index > 0 && completedChallenges.includes(challenges[index - 1].challenge_id);
+
+        let status: "locked" | "open" | "completed" = "locked";
+
+        if (isCompleted) {
+            status = "completed" as const;
+        } else if (index === 0 || isPreviousCompleted) {
+            status = "open" as const;
+        }
+
+        return {
+            ...challenge,
+            status
+        }
+    }) || []
 
     return (
         <main className="min-h-screen pt-32 pb-20 bg-background">
@@ -32,7 +54,7 @@ export default function ChallengesPage() {
                             Failed to load challenges. Please try again later.
                         </div>
                     ) : (
-                        challenges?.map((challenge) => (
+                        personalChallenges?.map((challenge) => (
                             <div key={challenge.challenge_id} className="h-full">
                                 <ChallengeCard challenge={{
                                     id: Number(challenge.challenge_id),

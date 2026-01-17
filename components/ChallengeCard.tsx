@@ -20,7 +20,7 @@ export function ChallengeCard({ challenge }: ChallengeCardProps) {
     return (
         <Card className={cn(
             "flex flex-col h-full transition-all duration-200 border-2 border-[#0F2854] shadow-[4px_4px_0px_0px_#0F2854] bg-white overflow-hidden",
-            isLocked ? "opacity-90 bg-gray-100" : "hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#0F2854]"
+            isLocked ? "bg-gray-100" : "hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#0F2854]"
         )}>
             <CardHeader className="border-b-2 border-[#0F2854] bg-secondary/20 pb-4 px-6 pt-6">
                 <div className="flex justify-between items-start mb-2">

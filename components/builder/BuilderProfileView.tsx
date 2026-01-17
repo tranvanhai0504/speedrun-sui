@@ -1,18 +1,55 @@
 "use client";
 
-import { useBuilderProfile, useChallenges } from "@/hooks/useApi";
+import { useBuilderProfile, useChallenges, useUpdateProfile } from "@/hooks/useApi";
 import { ChallengeCard } from "@/components/ChallengeCard";
-import { ArrowLeft, CheckCircle2, Copy, ExternalLink, Github, Medal, Share2, Trophy, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Github, Medal, Share2, Zap, Edit2, MapPin, Twitter, Send } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { BuilderProfile } from "@/lib/api";
+import { SocialsDialog } from "@/components/dialogs/SocialsDialog";
+import { LocationDialog } from "@/components/dialogs/LocationDialog";
 
 interface BuilderProfileViewProps {
     id: string;
 }
 
 export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
-    const { data: profile, isLoading: isLoadingProfile } = useBuilderProfile(id);
+    const { data: profile, isLoading: isLoadingProfile, refetch } = useBuilderProfile(id);
     const { data: challenges, isLoading: isLoadingChallenges } = useChallenges();
+    const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+
+    const [isSocialsOpen, setIsSocialsOpen] = useState(false);
+    const [isLocationOpen, setIsLocationOpen] = useState(false);
+
+    // Form States
+    const [socialsForm, setSocialsForm] = useState({
+        twitter: "",
+        github: "",
+        telegram: "",
+        discord: ""
+    });
+
+    const [locationForm, setLocationForm] = useState({
+        city: "",
+        country: "USA"
+    });
+
+    // Populate forms when profile loads
+    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    if (profile && !isDataLoaded) {
+        setSocialsForm({
+            twitter: profile.socials?.twitter || "",
+            github: profile.socials?.github || "",
+            telegram: profile.socials?.telegram || "",
+            discord: profile.socials?.discord || "",
+        });
+        setLocationForm({
+            city: profile.location?.city || "",
+            country: profile.location?.country || "USA",
+        });
+        setIsDataLoaded(true);
+    }
 
     // Combined loading state
     if (isLoadingProfile || isLoadingChallenges) {
@@ -24,15 +61,15 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
     }
 
     // Default mock user if profile not found (for prototype purposes) or mapping
-    // In real app, we would handle profile not found
-    const displayUser = profile || {
+    const displayUser: BuilderProfile | any = profile || {
         address: id,
-        ens: null,
-        xp: 0,
+        total_xp: 0,
         level: 1,
-        joinedDate: "Just Joined",
-        achievements: [],
-        completedChallenges: []
+        completed_challenges: [],
+        nfts: [],
+        sui_ns: null,
+        socials: {},
+        location: {}
     };
 
     // Normalize address for display
@@ -40,9 +77,33 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
         ? `${displayUser.address.slice(0, 6)}...${displayUser.address.slice(-4)}`
         : displayUser.address;
 
+    // SUI NS Display Logic
+    const mainDisplayName = displayUser.sui_ns?.name || shortAddress;
+    const subDisplayName = displayUser.sui_ns?.name ? shortAddress : null;
+
     const totalChallenges = challenges?.length || 0;
-    const completedCount = displayUser.completedChallenges?.length || 0;
+    const completedCount = displayUser.completed_challenges?.length || 0;
     const progressPercentage = totalChallenges > 0 ? (completedCount / totalChallenges) * 100 : 0;
+
+    const handleUpdateSocials = () => {
+        updateProfile({ socials: socialsForm }, {
+            onSuccess: () => {
+                setIsSocialsOpen(false);
+                refetch();
+            }
+        });
+    };
+
+    const handleUpdateLocation = () => {
+        updateProfile({ location: locationForm }, {
+            onSuccess: () => {
+                setIsLocationOpen(false);
+                refetch();
+            }
+        });
+    };
+
+    const countries = ["USA", "Vietnam", "UK", "Canada", "Singapore", "Japan", "Germany", "France", "South Korea", "India", "Australia", "Brazil", "China", "Taiwan", "Thailand"];
 
     return (
         <div className="min-h-screen bg-background pt-32 pb-20">
@@ -69,21 +130,54 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
                                     />
                                 </div>
 
-                                <h1 className="text-2xl font-black text-[#0F2854] mb-2 break-all">
-                                    {displayUser.ens || shortAddress}
+                                <h1 className="text-2xl font-black text-[#0F2854] mb-1 break-all">
+                                    {mainDisplayName}
                                 </h1>
+                                {subDisplayName && (
+                                    <p className="text-sm font-bold text-[#0F2854]/50 mb-2 font-mono">{subDisplayName}</p>
+                                )}
 
                                 <div className="flex items-center gap-2 text-sm font-bold text-[#0F2854]/70 mb-6 bg-secondary/30 px-3 py-1 rounded-full border border-[#0F2854]/20">
-                                    <span>Joined {displayUser.joinedDate}</span>
+                                    <span>Joined {displayUser.joinedDate || "Recently"}</span>
                                 </div>
 
-                                <div className="flex gap-3 w-full">
-                                    <Button variant="outline" className="flex-1 border-2 border-[#0F2854] shadow-[2px_2px_0px_0px_#0F2854] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none">
+                                {/* Action Buttons */}
+                                <div className="flex gap-3 w-full mb-6">
+                                    <Button variant="outline" className="flex-1 border-2 border-[#0F2854] shadow-[2px_2px_0px_0px_#0F2854] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none bg-white">
                                         <Copy className="h-4 w-4 mr-2" /> Copy
                                     </Button>
-                                    <Button variant="outline" className="flex-1 border-2 border-[#0F2854] shadow-[2px_2px_0px_0px_#0F2854] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none">
+                                    <Button variant="outline" className="flex-1 border-2 border-[#0F2854] shadow-[2px_2px_0px_0px_#0F2854] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none bg-white">
                                         <Share2 className="h-4 w-4 mr-2" /> Share
                                     </Button>
+                                </div>
+
+                                {/* Location & Socials Display (Click to edit) */}
+                                <div className="w-full space-y-3">
+                                    <div
+                                        className="flex items-center justify-center gap-2 text-[#0F2854] font-bold p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border-2 border-transparent hover:border-gray-200"
+                                        onClick={() => setIsLocationOpen(true)}
+                                    >
+                                        <MapPin className="h-4 w-4" />
+                                        <span>
+                                            {displayUser.location?.city ? `${displayUser.location.city}, ${displayUser.location.country}` : "Add Location"}
+                                        </span>
+                                        <Edit2 className="h-3 w-3 opacity-50 ml-1" />
+                                    </div>
+
+                                    <div
+                                        className="flex justify-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border-2 border-transparent hover:border-gray-200"
+                                        onClick={() => setIsSocialsOpen(true)}
+                                    >
+                                        {displayUser.socials?.twitter && <Twitter className="h-5 w-5 text-[#0F2854]" />}
+                                        {displayUser.socials?.github && <Github className="h-5 w-5 text-[#0F2854]" />}
+                                        {displayUser.socials?.telegram && <Send className="h-5 w-5 text-[#0F2854]" />}
+                                        {/* Fallback for no socials */}
+                                        {!displayUser.socials?.twitter && !displayUser.socials?.github && !displayUser.socials?.telegram && (
+                                            <span className="text-sm font-bold text-gray-400 flex items-center gap-2">
+                                                <Edit2 className="h-3 w-3" /> Add Socials
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -91,19 +185,11 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
                                         <span className="font-black text-[#0F2854] uppercase tracking-wider text-sm">Level {displayUser.level}</span>
-                                        <span className="font-bold text-[#4988C4]">{displayUser.xp} XP</span>
+                                        <span className="font-bold text-[#4988C4]">{displayUser.total_xp} XP</span>
                                     </div>
                                     <div className="w-full h-4 bg-gray-100 rounded-full border-2 border-[#0F2854] overflow-hidden">
-                                        <div className="h-full bg-[#4988C4]" style={{ width: `${Math.min(displayUser.xp / 10, 100)}%` }}></div>
+                                        <div className="h-full bg-[#4988C4]" style={{ width: `${Math.min(displayUser.total_xp / 10, 100)}%` }}></div>
                                     </div>
-                                </div>
-
-                                <div className="flex justify-between items-center bg-[#BDE8F5]/30 p-4 rounded-xl border-2 border-[#0F2854]">
-                                    <div className="flex items-center gap-3">
-                                        <Trophy className="h-6 w-6 text-[#1C4D8D]" />
-                                        <span className="font-bold text-[#0F2854]">Rank</span>
-                                    </div>
-                                    <span className="font-black text-2xl text-[#1C4D8D]">#--</span>
                                 </div>
                             </div>
                         </div>
@@ -160,7 +246,7 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {challenges?.map((challenge) => {
                                     // Override status for view
-                                    const isCompleted = displayUser.completedChallenges?.some((id: string | number) => String(id) === challenge.challenge_id);
+                                    const isCompleted = displayUser.completed_challenges?.some((id: string | number) => String(id) === challenge.challenge_id);
 
                                     // Map API challenge to UI challenge
                                     const mappedChallenge = {
@@ -186,6 +272,25 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
                     </div>
                 </div>
             </div>
+
+            <SocialsDialog
+                open={isSocialsOpen}
+                onOpenChange={setIsSocialsOpen}
+                form={socialsForm}
+                setForm={setSocialsForm}
+                onSave={handleUpdateSocials}
+                isUpdating={isUpdating}
+            />
+
+            <LocationDialog
+                open={isLocationOpen}
+                onOpenChange={setIsLocationOpen}
+                form={locationForm}
+                setForm={setLocationForm}
+                onSave={handleUpdateLocation}
+                isUpdating={isUpdating}
+                countries={countries}
+            />
         </div>
     );
 }

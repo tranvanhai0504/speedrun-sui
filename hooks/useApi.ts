@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getChallenges, getChallenge, getBuilderProfile, verifyChallenge } from "@/lib/api";
+import { getChallenges, getChallenge, getBuilderProfile, verifyChallenge, updateProfile, getLeaderboard } from "@/lib/api";
 
 export function useChallenges() {
     return useQuery({
@@ -28,5 +28,18 @@ export function useBuilderProfile(address: string) {
 export function useVerifyChallenge() {
     return useMutation({
         mutationFn: verifyChallenge,
+    });
+}
+
+export function useUpdateProfile() {
+    return useMutation({
+        mutationFn: updateProfile,
+    });
+}
+
+export function useLeaderboard(limit: number = 50, cursor?: string) {
+    return useQuery({
+        queryKey: ["leaderboard", limit, cursor],
+        queryFn: () => getLeaderboard(limit, cursor),
     });
 }

@@ -1,4 +1,4 @@
-import BuilderProfileView from "@/components/BuilderProfileView";
+import BuilderProfileView from "@/components/builder/BuilderProfileView";
 
 export default async function BuilderPage({
     params,

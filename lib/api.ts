@@ -12,6 +12,35 @@ export interface Challenge {
     instructions?: string; // Markdown content
 }
 
+export interface BuilderProfile {
+    address: string;
+    total_xp: number;
+    level: number;
+    completed_challenges: string[];
+    nfts: {
+        object_id: string;
+        name: string;
+        image_url: string;
+    }[];
+    sui_ns?: {
+        name: string;
+        object_id: string;
+    };
+    socials?: {
+        twitter?: string;
+        github?: string;
+        telegram?: string;
+        discord?: string;
+    };
+    location?: {
+        city?: string;
+        country?: string;
+    };
+    created_at?: number;
+    updated_at?: number;
+    joinedDate?: string; // Client-side mapping often uses this, keeping for compatibility if utilized
+}
+
 interface AuthResponse {
     token: string;
     address: string;
@@ -68,8 +97,20 @@ export async function getChallenge(id: string): Promise<Challenge> {
     return apiFetch(`/v1/challenges/${id}`);
 }
 
-export async function getBuilderProfile(address: string): Promise<any> {
+export async function getBuilderProfile(address: string): Promise<BuilderProfile> {
     return apiFetch(`/builders/${address}`);
+}
+
+export async function updateProfile(payload: { socials?: any; location?: any }): Promise<any> {
+    return apiFetch('/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+}
+
+export interface LeaderboardResponse {
+    leaderboard: BuilderProfile[];
+    cursor?: string;
 }
 
 export async function verifyChallenge(payload: { user_address: string, package_id: string, tx_digest: string, challenge_id: string }): Promise<any> {
@@ -77,4 +118,12 @@ export async function verifyChallenge(payload: { user_address: string, package_i
         method: 'POST',
         body: JSON.stringify(payload),
     });
+}
+
+export async function getLeaderboard(limit: number = 50, cursor?: string): Promise<LeaderboardResponse> {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (cursor) {
+        params.append('cursor', cursor);
+    }
+    return apiFetch(`/leaderboard?${params.toString()}`);
 }
