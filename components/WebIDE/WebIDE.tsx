@@ -27,6 +27,7 @@ export default function WebIDE() {
         updateFileContent,
         save,
         isSaving,
+        resetToTemplate
     } = useIde();
 
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -36,6 +37,7 @@ export default function WebIDE() {
         ""
     ]);
     const [isCompiling, setIsCompiling] = useState(false);
+    const [hasCompiledSuccessfully, setHasCompiledSuccessfully] = useState(false);
 
     const activeContent = activeFile ? (files[activeFile] || "") : "";
     const activeFilename = activeFile ? activeFile.split('/').pop() : "No file selected";
@@ -46,27 +48,28 @@ export default function WebIDE() {
 
     const handleCompile = async () => {
         setIsCompiling(true);
+        setHasCompiledSuccessfully(false);
         addLog(`> Compiling...`);
 
         try {
-            // Create Move.toml if not exists in memory for compilation context (backend handles it usually if missing but good to ensure)
-            // Ideally backend handles standard Move.toml injection.
-
             const result = await compileCode(files);
 
             if (result.error) {
                 addLog("> ✗ Compilation failed:");
                 addLog(result.error);
+                setHasCompiledSuccessfully(false);
             } else {
                 addLog("> ✓ Compilation successful!");
                 if (result.bytecode) {
                     addLog(`> Bytecode size: ${result.bytecode.length} bytes`);
                 }
+                setHasCompiledSuccessfully(true);
             }
         } catch (error: unknown) {
             addLog("> ✗ Compilation error:");
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
             addLog(errorMessage);
+            setHasCompiledSuccessfully(false);
         } finally {
             setIsCompiling(false);
         }
@@ -125,23 +128,52 @@ export default function WebIDE() {
             const { modules, dependencies } = result.data;
             addLog("> ✓ Compiled successfully. Requesting signature...");
 
-            // 2. Construct Transaction
+            // 2. Convert Base64 modules to byte arrays
+            const modulesAsBytes = modules.map((base64Module: string) => {
+                const binaryString = atob(base64Module);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return Array.from(bytes);
+            });
+
+            // 3. Construct Transaction
             const tx = new Transaction();
             const [upgradeCap] = tx.publish({
-                modules: modules.map((m: string) => Array.from(atob(m), c => c.charCodeAt(0))),
+                modules: modulesAsBytes,
                 dependencies: dependencies,
             });
 
-            // Transfer UpgradeCap to sender (must be authenticated so user exists)
+            // Transfer UpgradeCap to sender
             tx.transferObjects([upgradeCap], tx.pure.address(user?.address || ""));
 
-            // 3. Sign & Execute
+            // 4. Sign & Execute
             signAndExecute(
                 { transaction: tx },
                 {
                     onSuccess: (result: any) => {
                         addLog("> ✓ Deployment successful!");
-                        addLog(`> Digest: ${result.digest}`);
+                        const digest = result.digest;
+                        addLog(`> Digest: ${digest}`);
+                        addLog(`> Explorer: https://testnet.suivision.xyz/txblock/${digest}`);
+
+                        // Extract Package ID
+                        const effects = result.effects;
+                        if (effects?.created) {
+                            const packageObj = effects.created.find((obj: any) =>
+                                obj.owner === 'Immutable'
+                            );
+                            if (packageObj) {
+                                const packageId = packageObj.reference?.objectId || packageObj.objectId;
+                                if (packageId) {
+                                    addLog(`> Package ID: ${packageId}`);
+                                    addLog(`> You can now call functions like:`);
+                                    addLog(`> ${packageId}::your_module::your_function`);
+                                }
+                            }
+                        }
+
                         toast.success("Deployed successfully!");
                     },
                     onError: (error: any) => {
@@ -188,7 +220,7 @@ export default function WebIDE() {
                 className="flex-1 border border-[#2a2d39] overflow-hidden bg-[#1e2029] shadow-2xl rounded-lg"
             >
                 {/* File Explorer */}
-                <ResizablePanel defaultSize={20} minSize={12} maxSize={40}>
+                <ResizablePanel defaultSize={20} minSize={12} maxSize={350}>
                     <FileExplorer />
                 </ResizablePanel>
 
@@ -208,7 +240,9 @@ export default function WebIDE() {
                                     onCompile={handleCompile}
                                     onTest={handleTest}
                                     onDeploy={handleDeploy}
+                                    onReset={resetToTemplate}
                                     isLoading={isSaving || isCompiling}
+                                    canDeploy={hasCompiledSuccessfully}
                                 />
                                 <div className="flex-1 overflow-hidden">
                                     {activeFile ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface TerminalProps {
     logs: string[];
@@ -8,6 +9,11 @@ interface TerminalProps {
 }
 
 export default function Terminal({ logs, onClear }: TerminalProps) {
+    const endRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [logs]);
     return (
         <div className="h-full w-full bg-[#1a1d29] flex flex-col border-t border-[#2a2d39]">
             <div className="flex items-center justify-between px-4 py-2 bg-[#21242e] border-b border-[#2a2d39]">
@@ -41,9 +47,24 @@ export default function Terminal({ logs, onClear }: TerminalProps) {
                                             'text-[#9ca3af]'
                             )}
                         >
-                            {log}
+                            {log.split(/(https?:\/\/[^\s]+)/g).map((part, index) =>
+                                /(https?:\/\/[^\s]+)/g.test(part) ? (
+                                    <a
+                                        key={index}
+                                        href={part}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#4988C4] underline hover:text-[#7ba9d6] transition-colors"
+                                    >
+                                        {part}
+                                    </a>
+                                ) : (
+                                    part
+                                )
+                            )}
                         </div>
                     ))}
+                    <div ref={endRef} />
                 </div>
             </div>
         </div>

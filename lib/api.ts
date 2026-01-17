@@ -257,6 +257,7 @@ export interface IDEProject {
     name: string;
     description?: string;
     files: Record<string, string>;
+    challenge_id?: string;
     created_at?: number;
     updated_at?: number;
 }

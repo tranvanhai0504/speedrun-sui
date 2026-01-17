@@ -28,6 +28,8 @@ interface IdeContextType {
     isLoading: boolean;
     projectId: string | null;
     setProjectId: (id: string | null) => void;
+    resetToTemplate: () => void;
+    moveFile: (oldPath: string, newPath: string) => void;
 }
 
 const IdeContext = createContext<IdeContextType | undefined>(undefined);
@@ -46,6 +48,8 @@ function buildFileTree(files: Record<string, string>): FileNode[] {
             const isFile = index === parts.length - 1;
 
             let node = currentLevel.find(n => n.name === part);
+
+            if (part === '.keep') return;
 
             if (!node) {
                 node = {
@@ -112,7 +116,8 @@ export function IdeProvider({ children, challengeId }: { children: React.ReactNo
                 id: projectId || undefined,
                 name: `Challenge ${challengeId || 'Untitled'}`,
                 files: currentFiles,
-                description: `Solution for challenge ${challengeId}`
+                description: `Solution for challenge ${challengeId}`,
+                challenge_id: challengeId
             };
             return saveProject(projectData);
         },
@@ -148,12 +153,46 @@ export function IdeProvider({ children, challengeId }: { children: React.ReactNo
     }, []);
 
     const createFolder = useCallback((path: string) => {
-        // Folders are implicit in keys, but we can't really have empty folders in this flat structure easily 
-        // without a placeholder file like .keep.
-        // For simplicity, we might just handle file creation.
-        // If we really need empty folders, we'd need to mock them or just allow creating files inside them.
-        // Let's assume we just create a placeholder
-        // setFiles(prev => ({ ...prev, [`${path}/.keep`]: "" }));
+        setFiles(prev => ({ ...prev, [`${path}/.keep`]: "" }));
+    }, []);
+
+    const MOVE_TEMPLATE = {
+        "Move.toml": `[package]
+name = "MyChallenge"
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+my_challenge = "0x0"
+`,
+        "sources/module.move": `module my_challenge::hello_world {
+    use std::string;
+    use sui::object::{Self, UID};
+    use sui::transfer;
+    use sui::tx_context::{Self, TxContext};
+
+    struct HelloWorldObject has key, store {
+        id: UID,
+        text: string::String
+    }
+
+    public entry fun mint(ctx: &mut TxContext) {
+        let object = HelloWorldObject {
+            id: object::new(ctx),
+            text: string::utf8(b"Hello World!")
+        };
+        transfer::transfer(object, tx_context::sender(ctx));
+    }
+}`
+    };
+
+    const resetToTemplate = useCallback(() => {
+        if (confirm("This will overwrite your current files. Are you sure?")) {
+            setFiles(MOVE_TEMPLATE);
+            setActiveFile("sources/module.move");
+        }
     }, []);
 
     const deleteFile = useCallback((path: string) => {
@@ -172,6 +211,41 @@ export function IdeProvider({ children, challengeId }: { children: React.ReactNo
         });
         if (activeFile === path) {
             setActiveFile(null);
+        }
+    }, [activeFile]);
+
+    const moveFile = useCallback((oldPath: string, newPath: string) => {
+        setFiles(prev => {
+            const newFiles = { ...prev };
+            const isFolder = Object.keys(prev).some(k => k.startsWith(oldPath + '/'));
+
+            if (isFolder) {
+                Object.keys(prev).forEach(key => {
+                    if (key.startsWith(oldPath + '/')) {
+                        const suffix = key.substring(oldPath.length);
+                        const dest = newPath + suffix;
+                        newFiles[dest] = prev[key];
+                        delete newFiles[key];
+                    }
+                });
+                if (prev[`${oldPath}/.keep`]) {
+                    newFiles[`${newPath}/.keep`] = prev[`${oldPath}/.keep`];
+                    delete newFiles[`${oldPath}/.keep`];
+                }
+            } else {
+                if (prev[oldPath] !== undefined) {
+                    newFiles[newPath] = prev[oldPath];
+                    delete newFiles[oldPath];
+                }
+            }
+            return newFiles;
+        });
+
+        if (activeFile === oldPath) {
+            setActiveFile(newPath);
+        } else if (activeFile?.startsWith(oldPath + '/')) {
+            const suffix = activeFile.substring(oldPath.length);
+            setActiveFile(newPath + suffix);
         }
     }, [activeFile]);
 
@@ -195,7 +269,9 @@ export function IdeProvider({ children, challengeId }: { children: React.ReactNo
             isSaving: saveMutation.isPending,
             isLoading,
             projectId,
-            setProjectId
+            setProjectId,
+            resetToTemplate,
+            moveFile
         }}>
             {children}
         </IdeContext.Provider>

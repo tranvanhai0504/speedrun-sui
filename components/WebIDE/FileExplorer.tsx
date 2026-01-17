@@ -14,14 +14,42 @@ function FileTreeNode({
     node,
     level = 0
 }: FileTreeNodeProps) {
-    const { activeFile, openFile, deleteFile } = useIde();
+    const { activeFile, openFile, deleteFile, moveFile } = useIde();
     const [isExpanded, setIsExpanded] = useState(true);
     const [showActions, setShowActions] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (confirm(`Are you sure you want to delete ${node.name}?`)) {
             deleteFile(node.path);
+        }
+    };
+
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData("text/plain", node.path);
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        if (node.type !== "folder") return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const sourcePath = e.dataTransfer.getData("text/plain");
+        if (sourcePath && sourcePath !== node.path) {
+            if (!node.path.startsWith(sourcePath + '/')) {
+                moveFile(sourcePath, node.path + '/' + sourcePath.split('/').pop());
+            }
         }
     };
 
@@ -37,6 +65,8 @@ function FileTreeNode({
                 onClick={() => openFile(node.path)}
                 onMouseEnter={() => setShowActions(true)}
                 onMouseLeave={() => setShowActions(false)}
+                draggable
+                onDragStart={handleDragStart}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
                     <File className="h-4 w-4 text-[#6b7280] group-hover:text-[#9ca3af] flex-shrink-0" />
@@ -58,9 +88,17 @@ function FileTreeNode({
     return (
         <div>
             <div
-                className="flex items-center justify-between gap-2 py-1.5 px-2 cursor-pointer hover:bg-[#2a2d39] transition-colors rounded select-none group"
+                className={cn(
+                    "flex items-center justify-between gap-2 py-1.5 px-2 cursor-pointer transition-colors rounded select-none group border border-transparent",
+                    isDragOver ? "bg-[#2a2d39] border-[#4988C4]" : "hover:bg-[#2a2d39]"
+                )}
                 style={{ paddingLeft: `${8 + level * 16}px` }}
                 onClick={() => setIsExpanded(!isExpanded)}
+                draggable
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
             >
                 <div className="flex items-center gap-2">
                     {isExpanded ? (
