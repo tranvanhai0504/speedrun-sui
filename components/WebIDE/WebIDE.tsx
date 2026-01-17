@@ -192,7 +192,7 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
     return (
         <div className={`${isFullscreen
-            ? 'fixed inset-0 z-50 bg-[#1e2029] p-4'
+            ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[96vw] h-[92vh] z-50 bg-[#1e2029] p-4 rounded-xl border-2 border-[#4988C4] shadow-2xl'
             : 'relative'
             } transition-all duration-300`}>
             {/* Fullscreen Toggle Button */}
@@ -209,9 +209,9 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
             </button>
 
             <ResizablePanelGroup
-                direction="horizontal"
+                orientation="horizontal"
                 className={`${isFullscreen ? 'h-full' : 'min-h-[650px]'
-                    } border border-[#2a2d39] rounded-lg overflow-hidden bg-[#1e2029] shadow-2xl`}
+                    } border border-[#2a2d39] overflow-hidden bg-[#1e2029] shadow-2xl`}
             >
                 {/* File Explorer */}
                 <ResizablePanel defaultSize={18} minSize={12} maxSize={300}>
@@ -225,7 +225,7 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
                 {/* Editor + Terminal */}
                 <ResizablePanel defaultSize={82}>
-                    <ResizablePanelGroup direction="vertical">
+                    <ResizablePanelGroup orientation="vertical">
                         {/* Editor with Toolbar */}
                         <ResizablePanel defaultSize={65} minSize={35}>
                             <div className="h-full flex flex-col">
@@ -248,7 +248,7 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
                         <ResizableHandle
                             withHandle
-                            className="bg-[#2a2d39] h-[4px] hover:bg-[#4988C4] transition-colors cursor-row-resize"
+                            className="bg-[#2a2d39] h-[4px] hover:bg-[#4988C4] transition-colors cursor-row-resize relative"
                         />
 
                         {/* Terminal */}
