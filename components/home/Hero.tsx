@@ -31,10 +31,12 @@ export function Hero() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Button size="lg" className="rounded-xl h-16 text-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]">
-                            Start Building Now <ArrowRight className="ml-2 h-5 w-5" />
+                        <Button asChild size="lg" className="rounded-xl h-16 text-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]">
+                            <Link href="/challenges">
+                                Start Building Now <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
                         </Button>
-                        <Button variant="outline" size="lg" className="rounded-xl h-16 text-lg bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]">
+                        <Button asChild variant="outline" size="lg" className="rounded-xl h-16 text-lg bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]">
                             <Link href="/challenges">
                                 View Challenges
                             </Link>
