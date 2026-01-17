@@ -1,100 +1,56 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, File, Folder, Plus, FolderOpen, FilePlus, FolderPlus } from "lucide-react";
+import { ChevronRight, ChevronDown, File, Folder, Plus, FolderOpen, FilePlus, FolderPlus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIde, FileNode } from "./IdeContext";
 
-interface FileNode {
-    name: string;
-    type: "file" | "folder";
-    path: string;
-    children?: FileNode[];
-    content?: string;
+interface FileTreeNodeProps {
+    node: FileNode;
+    level?: number;
 }
-
-interface FileExplorerProps {
-    onFileSelect: (path: string, content: string) => void;
-    selectedFile?: string;
-    onFilesChange?: (files: FileNode[]) => void;
-}
-
-const defaultFiles: FileNode[] = [
-    {
-        name: "sources",
-        type: "folder",
-        path: "sources",
-        children: [
-            {
-                name: "hello_world.move",
-                type: "file",
-                path: "sources/hello_world.move",
-                content: `module hello_world::hello {
-    use std::string;
-    use sui::object::{Self, UID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-
-    public struct HelloWorld has key {
-        id: UID,
-        text: string::String
-    }
-
-    public entry fun mint(ctx: &mut TxContext) {
-        let object = HelloWorld {
-            id: object::new(ctx),
-            text: string::utf8(b"Hello World!")
-        };
-        transfer::transfer(object, tx_context::sender(ctx));
-    }
-}`
-            }
-        ]
-    },
-    {
-        name: "tests",
-        type: "folder",
-        path: "tests",
-        children: [
-            {
-                name: "hello_world_tests.move",
-                type: "file",
-                path: "tests/hello_world_tests.move",
-                content: `#[test_only]
-module hello_world::hello_tests {
-    // Test code here
-}`
-            }
-        ]
-    }
-];
 
 function FileTreeNode({
     node,
-    onFileSelect,
-    selectedFile,
     level = 0
-}: {
-    node: FileNode;
-    onFileSelect: (path: string, content: string) => void;
-    selectedFile?: string;
-    level?: number;
-}) {
+}: FileTreeNodeProps) {
+    const { activeFile, openFile, deleteFile } = useIde();
     const [isExpanded, setIsExpanded] = useState(true);
+    const [showActions, setShowActions] = useState(false);
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete ${node.name}?`)) {
+            deleteFile(node.path);
+        }
+    };
 
     if (node.type === "file") {
-        const isSelected = selectedFile === node.path;
+        const isSelected = activeFile === node.path;
         return (
             <div
                 className={cn(
-                    "flex items-center gap-2 py-1.5 px-2 cursor-pointer group",
-                    "hover:bg-[#2a2d39] transition-colors rounded",
-                    isSelected && "bg-[#2a2d39]"
+                    "flex items-center justify-between gap-2 py-1.5 px-2 cursor-pointer group rounded select-none relative",
+                    isSelected ? "bg-[#2a2d39]" : "hover:bg-[#2a2d39] transition-colors"
                 )}
                 style={{ paddingLeft: `${8 + level * 16}px` }}
-                onClick={() => onFileSelect(node.path, node.content || "")}
+                onClick={() => openFile(node.path)}
+                onMouseEnter={() => setShowActions(true)}
+                onMouseLeave={() => setShowActions(false)}
             >
-                <File className="h-4 w-4 text-[#6b7280] group-hover:text-[#9ca3af]" />
-                <span className="text-sm text-[#d1d5db]">{node.name}</span>
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <File className="h-4 w-4 text-[#6b7280] group-hover:text-[#9ca3af] flex-shrink-0" />
+                    <span className="text-sm text-[#d1d5db] truncate">{node.name}</span>
+                </div>
+                {showActions && (
+                    <button
+                        onClick={handleDelete}
+                        className="p-1 hover:bg-[#3a3d49] rounded"
+                        title="Delete"
+                    >
+                        <Trash2 className="h-3 w-3 text-red-400" />
+                    </button>
+                )}
             </div>
         );
     }
@@ -102,30 +58,31 @@ function FileTreeNode({
     return (
         <div>
             <div
-                className="flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-[#2a2d39] transition-colors rounded"
+                className="flex items-center justify-between gap-2 py-1.5 px-2 cursor-pointer hover:bg-[#2a2d39] transition-colors rounded select-none group"
                 style={{ paddingLeft: `${8 + level * 16}px` }}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
-                {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-[#6b7280]" />
-                ) : (
-                    <ChevronRight className="h-4 w-4 text-[#6b7280]" />
-                )}
-                {isExpanded ? (
-                    <FolderOpen className="h-4 w-4 text-[#f59e0b]" />
-                ) : (
-                    <Folder className="h-4 w-4 text-[#f59e0b]" />
-                )}
-                <span className="text-sm text-[#d1d5db] font-medium">{node.name}</span>
+                <div className="flex items-center gap-2">
+                    {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-[#6b7280]" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4 text-[#6b7280]" />
+                    )}
+                    {isExpanded ? (
+                        <FolderOpen className="h-4 w-4 text-[#f59e0b]" />
+                    ) : (
+                        <Folder className="h-4 w-4 text-[#f59e0b]" />
+                    )}
+                    <span className="text-sm text-[#d1d5db] font-medium">{node.name}</span>
+                </div>
+                {/* Folder actions could go here */}
             </div>
             {isExpanded && node.children && (
                 <div>
                     {node.children.map((child, i) => (
                         <FileTreeNode
-                            key={i}
+                            key={`${child.path}-${i}`}
                             node={child}
-                            onFileSelect={onFileSelect}
-                            selectedFile={selectedFile}
                             level={level + 1}
                         />
                     ))}
@@ -135,8 +92,8 @@ function FileTreeNode({
     );
 }
 
-export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange }: FileExplorerProps) {
-    const [files, setFiles] = useState<FileNode[]>(defaultFiles);
+export default function FileExplorer() {
+    const { fileTree, createFile, createFolder } = useIde();
     const [showCreateMenu, setShowCreateMenu] = useState(false);
     const [creatingType, setCreatingType] = useState<"file" | "folder" | null>(null);
     const [newItemName, setNewItemName] = useState("");
@@ -150,22 +107,23 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
     const handleCreateConfirm = () => {
         if (!newItemName.trim() || !creatingType) return;
 
-        const newNode: FileNode = {
-            name: newItemName,
-            type: creatingType,
-            path: `sources/${newItemName}`,
-            content: creatingType === "file" ? "// New file\n" : undefined,
-            children: creatingType === "folder" ? [] : undefined
-        };
+        // Default to sources/ if not specified, or just root?
+        // IdeContext's createFile behaves simply on path.
+        // For better UX, we might want to allow creating relative to selected folder, but flat list relies on full path.
+        // Let's assume root "sources/" prefix if not present for simplicity or just root.
+        // Given current structure is sources/module.move, let's prepend sources/ if not starting with it, or just allow free paths.
+        // Let's use `sources/` as default root for new files for now if simple.
 
-        const updatedFiles = [...files];
-        const sourcesFolder = updatedFiles.find(f => f.name === "sources");
-        if (sourcesFolder && sourcesFolder.children) {
-            sourcesFolder.children.push(newNode);
+        let path = newItemName;
+        if (!path.includes('/') && creatingType === 'file') {
+            path = `sources/${path}`;
         }
 
-        setFiles(updatedFiles);
-        if (onFilesChange) onFilesChange(updatedFiles);
+        if (creatingType === "file") {
+            createFile(path);
+        } else {
+            createFolder(path);
+        }
 
         setCreatingType(null);
         setNewItemName("");
@@ -180,18 +138,19 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
         <div className="h-full bg-[#1e2029] border-r border-[#2a2d39] flex flex-col">
             <div className="flex items-center justify-between px-3 py-3 border-b border-[#2a2d39]">
                 <h3 className="text-xs font-bold text-[#9ca3af] uppercase tracking-wider">
-                    File Explorer
+                    Explorer
                 </h3>
                 <div className="relative">
                     <button
                         onClick={() => setShowCreateMenu(!showCreateMenu)}
                         className="p-1 hover:bg-[#2a2d39] rounded transition-colors"
+                        title="New..."
                     >
                         <Plus className="h-4 w-4 text-[#6b7280]" />
                     </button>
 
                     {showCreateMenu && (
-                        <div className="absolute right-0 mt-1 w-40 bg-[#2a2d39] border border-[#3a3d49] rounded-lg shadow-xl z-10">
+                        <div className="absolute right-0 mt-1 w-40 bg-[#2a2d39] border border-[#3a3d49] rounded-lg shadow-xl z-20">
                             <button
                                 onClick={() => handleCreate("file")}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#d1d5db] hover:bg-[#3a3d49] rounded-t-lg transition-colors"
@@ -199,6 +158,7 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
                                 <FilePlus className="h-4 w-4" />
                                 New File
                             </button>
+                            {/* Folder creation might be tricky with flat structure until we have real folder support, but kept for UI */}
                             <button
                                 onClick={() => handleCreate("folder")}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#d1d5db] hover:bg-[#3a3d49] rounded-b-lg transition-colors"
@@ -213,6 +173,9 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
 
             {creatingType && (
                 <div className="px-3 py-2 bg-[#252830] border-b border-[#2a2d39]">
+                    <div className="text-xs text-[#9ca3af] mb-1">
+                        Creating {creatingType}...
+                    </div>
                     <input
                         type="text"
                         value={newItemName}
@@ -221,8 +184,8 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
                             if (e.key === "Enter") handleCreateConfirm();
                             if (e.key === "Escape") handleCreateCancel();
                         }}
-                        className="w-full px-2 py-1 text-sm bg-[#1e2029] text-[#d1d5db] border border-[#4988C4] rounded focus:outline-none"
-                        placeholder={creatingType === "file" ? "filename.move" : "folder_name"}
+                        className="w-full px-2 py-1 text-sm bg-[#1e2029] text-[#d1d5db] border border-[#4988C4] rounded focus:outline-none focus:border-[#4988C4]"
+                        placeholder={creatingType === "file" ? "sources/filename.move" : "folder_name"}
                         autoFocus
                     />
                     <div className="flex gap-2 mt-2">
@@ -243,14 +206,17 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
             )}
 
             <div className="flex-1 overflow-y-auto py-2 px-1">
-                {files.map((node, i) => (
+                {fileTree.map((node, i) => (
                     <FileTreeNode
-                        key={i}
+                        key={`${node.path}-${i}`}
                         node={node}
-                        onFileSelect={onFileSelect}
-                        selectedFile={selectedFile}
                     />
                 ))}
+                {fileTree.length === 0 && (
+                    <div className="text-center py-4 text-[#6b7280] text-sm">
+                        No files yet
+                    </div>
+                )}
             </div>
         </div>
     );

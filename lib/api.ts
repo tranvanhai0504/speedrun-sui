@@ -192,8 +192,14 @@ export interface CompileRequest {
 }
 
 export interface CompileResponse {
-    bytecode: string;
-    error: string;
+    success: boolean;
+    data?: {
+        modules: string[];
+        dependencies: string[];
+        digest: number[];
+    };
+    bytecode?: string; // Keeping for backward compatibility if needed, but usage guide suggests data.modules
+    error?: string;
 }
 
 export async function compileCode(files: Record<string, string>): Promise<CompileResponse> {
@@ -208,12 +214,42 @@ export async function compileCode(files: Record<string, string>): Promise<Compil
     if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Compilation failed' }));
         return {
+            success: false,
             bytecode: '',
             error: error.error || error.message || 'Compilation failed'
         };
     }
 
     return response.json();
+}
+
+export interface TestResponse {
+    output: string;
+    error?: string;
+}
+
+export async function runTest(files: Record<string, string>): Promise<TestResponse> {
+    const response = await fetch(`${API_URL}/ide/test`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ files }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Test execution failed' }));
+        return {
+            output: '',
+            error: error.error || error.message || 'Test execution failed'
+        };
+    }
+
+    const result = await response.json();
+    return {
+        output: result.data?.output || result.output || '', // Handle varied response formats
+        error: undefined
+    };
 }
 
 export interface IDEProject {

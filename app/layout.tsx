@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Providers } from "@/app/providers";
+import { Toaster } from "sonner";
 import "@fontsource/nunito/400.css";
 import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>
           {children}
+          <Toaster richColors position="top-center" />
         </Providers>
       </body>
     </html>

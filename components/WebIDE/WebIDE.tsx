@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 import {
     ResizableHandle,
@@ -11,179 +11,153 @@ import FileExplorer from "./FileExplorer";
 import Editor from "./Editor";
 import Terminal from "./Terminal";
 import ActionToolbar from "./ActionToolbar";
-import { compileCode, saveProject, getProject, IDEProject } from "@/lib/api";
+import { compileCode, runTest } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useIde } from "./IdeContext";
+import { Transaction } from '@mysten/sui/transactions';
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { toast } from "sonner";
 
-interface WebIDEProps {
-    initialCode?: string;
-    onCodeChange?: (value: string | undefined) => void;
-}
-
-export default function WebIDE({ initialCode = "// Start coding...", onCodeChange }: WebIDEProps) {
+export default function WebIDE() {
     const { isAuthenticated, user } = useAuth();
-    const [selectedFile, setSelectedFile] = useState<string>("");
-    const [code, setCode] = useState(initialCode);
-    const [filename, setFilename] = useState("untitled.move");
+    const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+    const {
+        files,
+        activeFile,
+        updateFileContent,
+        save,
+        isSaving,
+    } = useIde();
+
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [files, setFiles] = useState<Record<string, string>>({});
-    const [projectId, setProjectId] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([
         "> SpeedrunSui Web IDE Ready",
         "> Select a file from the explorer or start coding",
         ""
     ]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isCompiling, setIsCompiling] = useState(false);
 
-    // Load project from localStorage on mount
-    useEffect(() => {
-        const savedProjectId = localStorage.getItem('ide_project_id');
-        if (savedProjectId && isAuthenticated) {
-            loadProject(savedProjectId);
-        }
-    }, [isAuthenticated]);
-
-    const loadProject = async (id: string) => {
-        try {
-            const project = await getProject(id);
-            setFiles(project.files);
-            setProjectId(project.id || null);
-            addLog(`> Loaded project: ${project.name}`);
-
-            // Load first file
-            const firstFile = Object.keys(project.files)[0];
-            if (firstFile) {
-                setSelectedFile(firstFile);
-                setFilename(firstFile);
-                setCode(project.files[firstFile]);
-            }
-        } catch (error: any) {
-            addLog(`> Failed to load project: ${error.message}`);
-        }
-    };
-
-    const handleSaveProject = async () => {
-        if (!isAuthenticated) {
-            addLog("> Please sign in to save projects");
-            return;
-        }
-
-        setIsLoading(true);
-        addLog("> Saving project...");
-
-        try {
-            // Update files with current code
-            const updatedFiles = {
-                ...files,
-                [filename]: code
-            };
-
-            const project: IDEProject = {
-                id: projectId || undefined,
-                name: `SpeedrunSui Project ${new Date().toISOString().split('T')[0]}`,
-                description: "Created in Web IDE",
-                files: updatedFiles
-            };
-
-            const savedProject = await saveProject(project);
-            setProjectId(savedProject.id || null);
-            setFiles(updatedFiles);
-
-            if (savedProject.id) {
-                localStorage.setItem('ide_project_id', savedProject.id);
-            }
-
-            addLog("> ✓ Project saved successfully!");
-            addLog(`> Project ID: ${savedProject.id}`);
-        } catch (error: any) {
-            addLog("> ✗ Failed to save project:");
-            addLog(error.message || "Unknown error");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleFileSelect = (path: string, content: string) => {
-        // Save current file before switching
-        if (filename && code) {
-            setFiles(prev => ({ ...prev, [filename]: code }));
-        }
-
-        setSelectedFile(path);
-        setCode(content);
-        setFilename(path.split('/').pop() || 'untitled.move');
-        addLog(`> Opened ${path}`);
-    };
-
-    const handleCodeChange = (value: string | undefined) => {
-        setCode(value || "");
-        if (onCodeChange) {
-            onCodeChange(value);
-        }
-    };
+    const activeContent = activeFile ? (files[activeFile] || "") : "";
+    const activeFilename = activeFile ? activeFile.split('/').pop() : "No file selected";
 
     const addLog = (message: string) => {
         setLogs(prev => [...prev, message]);
     };
 
     const handleCompile = async () => {
-        setIsLoading(true);
-        addLog(`> Compiling ${filename}...`);
+        setIsCompiling(true);
+        addLog(`> Compiling...`);
 
         try {
-            // Save current file to files object
-            const currentFiles = {
-                ...files,
-                [filename]: code
-            };
+            // Create Move.toml if not exists in memory for compilation context (backend handles it usually if missing but good to ensure)
+            // Ideally backend handles standard Move.toml injection.
 
-            // Create Move.toml if not exists
-            const filesToCompile: Record<string, string> = {
-                ...currentFiles,
-                "Move.toml": currentFiles["Move.toml"] || `[package]\nname = "SpeedrunSui"\nversion = "0.0.1"\n\n[dependencies]\nSui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }\n\n[addresses]\nspeedrun = "0x0"`
-            };
-
-            const result = await compileCode(filesToCompile);
+            const result = await compileCode(files);
 
             if (result.error) {
                 addLog("> ✗ Compilation failed:");
                 addLog(result.error);
             } else {
                 addLog("> ✓ Compilation successful!");
-                addLog("> Build artifacts ready");
                 if (result.bytecode) {
                     addLog(`> Bytecode size: ${result.bytecode.length} bytes`);
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             addLog("> ✗ Compilation error:");
-            addLog(error.message || "Unknown error");
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            addLog(errorMessage);
         } finally {
-            setIsLoading(false);
+            setIsCompiling(false);
         }
     };
 
     const handleTest = async () => {
-        setIsLoading(true);
-        addLog(`> Running tests for ${filename}...`);
+        setIsCompiling(true);
+        addLog(`> Running tests...`);
 
-        // Simulate testing
-        setTimeout(() => {
-            addLog("> ✓ All tests passed!");
-            addLog("> Test summary: 5 passed, 0 failed");
-            setIsLoading(false);
-        }, 2000);
+        try {
+            const result = await runTest(files);
+
+            if (result.error) {
+                addLog("> ✗ Tests failed to run:");
+                addLog(result.error);
+            } else {
+                addLog("> Test Output:");
+                // Split output by newlines and add each line
+                result.output.split('\n').forEach((line: string) => addLog(line));
+                if (result.output.includes("FAIL")) {
+                    addLog("> ✗ Some tests failed.");
+                } else {
+                    addLog("> ✓ Tests completed.");
+                }
+            }
+        } catch (error: unknown) {
+            addLog("> ✗ Test error:");
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            addLog(errorMessage);
+        } finally {
+            setIsCompiling(false);
+        }
     };
 
     const handleDeploy = async () => {
-        setIsLoading(true);
-        addLog(`> Deploying ${filename} to Sui network...`);
+        if (!isAuthenticated) {
+            addLog("> ⚠ Please sign in to deploy.");
+            return;
+        }
 
-        // Simulate deployment
-        setTimeout(() => {
-            addLog("> ✓ Deployment successful!");
-            addLog("> Package ID: 0x1234...abcd");
-            setIsLoading(false);
-        }, 2500);
+        setIsCompiling(true);
+        addLog(`> Compiling for deployment...`);
+
+        try {
+            // 1. Compile
+            const result = await compileCode(files);
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            if (!result.data || !result.data.modules || !result.data.dependencies) {
+                throw new Error("Invalid compilation result: missing modules or dependencies");
+            }
+
+            const { modules, dependencies } = result.data;
+            addLog("> ✓ Compiled successfully. Requesting signature...");
+
+            // 2. Construct Transaction
+            const tx = new Transaction();
+            const [upgradeCap] = tx.publish({
+                modules: modules.map((m: string) => Array.from(atob(m), c => c.charCodeAt(0))),
+                dependencies: dependencies,
+            });
+
+            // Transfer UpgradeCap to sender (must be authenticated so user exists)
+            tx.transferObjects([upgradeCap], tx.pure.address(user?.address || ""));
+
+            // 3. Sign & Execute
+            signAndExecute(
+                { transaction: tx },
+                {
+                    onSuccess: (result: any) => {
+                        addLog("> ✓ Deployment successful!");
+                        addLog(`> Digest: ${result.digest}`);
+                        toast.success("Deployed successfully!");
+                    },
+                    onError: (error: any) => {
+                        addLog(`> ✗ Deployment failed: ${error.message}`);
+                        toast.error("Deployment failed");
+                    }
+                }
+            );
+
+        } catch (error: unknown) {
+            addLog("> ✗ Deployment error:");
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            addLog(errorMessage);
+        } finally {
+            setIsCompiling(false);
+        }
     };
 
     const handleClearTerminal = () => {
@@ -193,8 +167,9 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
     return (
         <div className={`${isFullscreen
             ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[96vw] h-[92vh] z-50 bg-[#1e2029] p-4 rounded-xl border-2 border-[#4988C4] shadow-2xl'
-            : 'relative'
-            } transition-all duration-300`}>
+            : 'relative h-full'
+            } transition-all duration-300 flex flex-col`}>
+
             {/* Fullscreen Toggle Button */}
             <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
@@ -210,12 +185,11 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
             <ResizablePanelGroup
                 orientation="horizontal"
-                className={`${isFullscreen ? 'h-full' : 'min-h-[650px]'
-                    } border border-[#2a2d39] overflow-hidden bg-[#1e2029] shadow-2xl`}
+                className="flex-1 border border-[#2a2d39] overflow-hidden bg-[#1e2029] shadow-2xl rounded-lg"
             >
                 {/* File Explorer */}
-                <ResizablePanel defaultSize={18} minSize={12} maxSize={300}>
-                    <FileExplorer onFileSelect={handleFileSelect} selectedFile={selectedFile} />
+                <ResizablePanel defaultSize={20} minSize={12} maxSize={40}>
+                    <FileExplorer />
                 </ResizablePanel>
 
                 <ResizableHandle
@@ -224,24 +198,30 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
                 />
 
                 {/* Editor + Terminal */}
-                <ResizablePanel defaultSize={82}>
+                <ResizablePanel defaultSize={80}>
                     <ResizablePanelGroup orientation="vertical">
                         {/* Editor with Toolbar */}
-                        <ResizablePanel defaultSize={65} minSize={35}>
+                        <ResizablePanel defaultSize={70} minSize={30}>
                             <div className="h-full flex flex-col">
                                 <ActionToolbar
-                                    onSave={handleSaveProject}
+                                    onSave={save}
                                     onCompile={handleCompile}
                                     onTest={handleTest}
                                     onDeploy={handleDeploy}
-                                    isLoading={isLoading}
+                                    isLoading={isSaving || isCompiling}
                                 />
                                 <div className="flex-1 overflow-hidden">
-                                    <Editor
-                                        value={code}
-                                        onChange={handleCodeChange}
-                                        filename={filename}
-                                    />
+                                    {activeFile ? (
+                                        <Editor
+                                            value={activeContent}
+                                            onChange={(val) => updateFileContent(activeFile, val || "")}
+                                            filename={activeFilename || "untitled"}
+                                        />
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-[#6b7280]">
+                                            Select a file to start coding
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </ResizablePanel>
@@ -252,7 +232,7 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
                         />
 
                         {/* Terminal */}
-                        <ResizablePanel defaultSize={35} minSize={15}>
+                        <ResizablePanel defaultSize={30} minSize={10}>
                             <Terminal logs={logs} onClear={handleClearTerminal} />
                         </ResizablePanel>
                     </ResizablePanelGroup>

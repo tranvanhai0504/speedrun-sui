@@ -102,10 +102,14 @@ export default function ChallengePage({
             </div>
 
             {/* Floating IDE Window */}
-            <ChallengeIDE />
+            <IdeProvider challengeId={id}>
+                <ChallengeIDE />
+            </IdeProvider>
         </div>
     );
 }
+
+import { IdeProvider } from "@/components/WebIDE/IdeContext";
 
 // Import React for hooks
 import React from "react";
