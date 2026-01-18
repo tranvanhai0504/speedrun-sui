@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import IncubatorSVG from "@/components/animationSVG/IncubatorSVG";
+import Link from "next/link";
 
 export function CTA() {
     return (
@@ -13,8 +14,8 @@ export function CTA() {
                         <p className="text-lg md:text-xl font-bold opacity-90 mb-8">
                             Join 10,000+ developers building the future of Sui. It's free and always will be.
                         </p>
-                        <Button size="lg" className="rounded-xl px-12 h-20 text-xl border-2 border-black bg-white text-black hover:bg-gray-100 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px]">
-                            Get Started Now <ArrowRight className="ml-2 h-6 w-6" />
+                        <Button asChild size="lg" className="rounded-xl px-12 h-20 text-xl border-2 border-black bg-white text-black hover:bg-gray-100 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px]">
+                            <Link href="/start">Get Started Now <ArrowRight className="ml-2 h-6 w-6" /></Link>
                         </Button>
                     </div>
 
