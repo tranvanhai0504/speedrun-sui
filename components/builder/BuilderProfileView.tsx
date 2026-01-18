@@ -244,29 +244,43 @@ export default function BuilderProfileView({ id }: BuilderProfileViewProps) {
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {challenges?.map((challenge) => {
-                                    // Override status for view
-                                    const isCompleted = displayUser.completed_challenges?.some((id: string | number) => String(id) === challenge.challenge_id);
+                                {challenges
+                                    ?.sort((a, b) => Number(a.challenge_id) - Number(b.challenge_id))
+                                    .map((challenge, index, array) => {
+                                        const completedChallenges = displayUser.completed_challenges || [];
+                                        const isCompleted = completedChallenges.includes(challenge.challenge_id);
+                                        const isPreviousCompleted = index > 0 && completedChallenges.includes(array[index - 1].challenge_id);
 
-                                    // Map API challenge to UI challenge
-                                    const mappedChallenge = {
-                                        id: Number(challenge.challenge_id),
-                                        title: challenge.title,
-                                        description: challenge.description,
-                                        status: isCompleted ? "completed" : (challenge.status || "locked"),
-                                    };
+                                        let status: "locked" | "open" | "completed" = "locked";
 
-                                    return (
-                                        <div key={challenge.challenge_id} className="group relative">
-                                            <ChallengeCard challenge={mappedChallenge} />
-                                            {isCompleted && (
-                                                <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm border border-green-700 flex items-center gap-1 z-10">
-                                                    <CheckCircle2 className="h-3 w-3" /> VERIFIED
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                        if (isCompleted) {
+                                            status = "completed";
+                                        } else if (index === 0 || isPreviousCompleted) {
+                                            status = "open";
+                                        }
+
+                                        // Map API challenge to UI challenge
+                                        const mappedChallenge = {
+                                            id: Number(challenge.challenge_id),
+                                            title: challenge.title,
+                                            description: challenge.description,
+                                            status: status,
+                                            difficulty: challenge.difficulty,
+                                            xp_reward: challenge.xp_reward,
+                                            submission_count: challenge.submission_count,
+                                        };
+
+                                        return (
+                                            <div key={challenge.challenge_id} className="group relative">
+                                                <ChallengeCard challenge={mappedChallenge} />
+                                                {isCompleted && (
+                                                    <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm border border-green-700 flex items-center gap-1 z-10">
+                                                        <CheckCircle2 className="h-3 w-3" /> VERIFIED
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                             </div>
                         </div>
                     </div>

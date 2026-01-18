@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Terminal, X, Maximize2, Minimize2, Minus } from "lucide-react";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import { Terminal, Maximize2, Minimize2, Minus } from "lucide-react";
+import { motion, AnimatePresence, useDragControls, useMotionValue } from "framer-motion";
 
 const WebIDE = dynamic(() => import("@/components/WebIDE/WebIDE"), { ssr: false });
 
@@ -15,6 +15,8 @@ export function ChallengeIDE({ challengeId }: ChallengeIDEProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
     const dragControls = useDragControls();
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
 
     return (
         <>
@@ -80,7 +82,9 @@ export function ChallengeIDE({ challengeId }: ChallengeIDEProps) {
                             }
                         }}
                         style={{
-                            transformOrigin: "bottom left"
+                            transformOrigin: "bottom left",
+                            x,
+                            y
                         }}
                         className={`fixed z-60 bg-white rounded-xl border-4 border-[#0F2854] shadow-[8px_8px_0px_0px_#0F2854] flex flex-col ${isMaximized
                             ? "inset-4"
@@ -104,7 +108,11 @@ export function ChallengeIDE({ challengeId }: ChallengeIDEProps) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setIsMaximized(!isMaximized)}
+                                    onClick={() => {
+                                        setIsMaximized(!isMaximized);
+                                        x.set(0);
+                                        y.set(0);
+                                    }}
                                     className="p-2 hover:bg-white/20 rounded transition-colors"
                                     title={isMaximized ? "Restore" : "Maximize"}
                                 >
