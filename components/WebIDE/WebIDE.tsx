@@ -6,25 +6,48 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import FileExplorer from "./FileExplorer";
+import { useSignAndExecuteTransaction, useCurrentAccount } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
+import { fromBase64 } from "@mysten/sui/utils";
+import FileExplorer, { defaultFiles, FileNode } from "./FileExplorer";
 import Editor from "./Editor";
 import Terminal from "./Terminal";
 import ActionToolbar from "./ActionToolbar";
 import { compileCode, saveProject, getProject, IDEProject } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 
+const flattenFiles = (nodes: FileNode[]): Record<string, string> => {
+    let acc: Record<string, string> = {};
+    const traverse = (n: FileNode) => {
+        if (n.type === 'file' && n.content !== undefined) {
+            // Ensure 'content' is used, defaulting to empty string if undefined but handled by type
+            acc[n.path] = n.content;
+        }
+        if (n.children) {
+            n.children.forEach(traverse);
+        }
+    };
+    nodes.forEach(traverse);
+    return acc;
+};
+
 interface WebIDEProps {
     initialCode?: string;
     onCodeChange?: (value: string | undefined) => void;
+    challengeId?: string;
 }
 
-export default function WebIDE({ initialCode = "// Start coding...", onCodeChange }: WebIDEProps) {
+export default function WebIDE({ initialCode = "// Start coding...", onCodeChange, challengeId }: WebIDEProps) {
     const { isAuthenticated, user } = useAuth();
     const [selectedFile, setSelectedFile] = useState<string>("");
     const [code, setCode] = useState(initialCode);
     const [filename, setFilename] = useState("untitled.move");
-    const [files, setFiles] = useState<Record<string, string>>({});
+    const [files, setFiles] = useState<Record<string, string>>(() => flattenFiles(defaultFiles));
+    const [buildFiles, setBuildFiles] = useState<Record<string, string>>({});
     const [projectId, setProjectId] = useState<string | null>(null);
+
+    const currentAccount = useCurrentAccount();
+    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const [logs, setLogs] = useState<string[]>([
         "> SpeedrunSui Web IDE Ready",
         "> Select a file from the explorer or start coding",
@@ -79,7 +102,8 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
                 id: projectId || undefined,
                 name: `SpeedrunSui Project ${new Date().toISOString().split('T')[0]}`,
                 description: "Created in Web IDE",
-                files: updatedFiles
+                files: updatedFiles,
+                challenge_id: challengeId // Add challenge_id from props
             };
 
             const savedProject = await saveProject(project);
@@ -125,29 +149,81 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
     const handleCompile = async () => {
         setIsLoading(true);
-        addLog(`> Compiling ${filename}...`);
+        addLog("> Preparing compilation...");
+
+        const currentFiles = { ...files, [filename]: code }; // Ensure current file is included
+        const fileKeys = Object.keys(currentFiles);
+        addLog(`> Files detected: ${fileKeys.length}`);
+        addLog(`> File list: ${fileKeys.join(", ")}`);
+
+        // Check Move.toml status
+        if (!currentFiles["Move.toml"]) {
+            addLog("> ⚠️ 'Move.toml' not found in active files. Injecting default template (SpeedrunSui).");
+            addLog("> If you have a custom Move.toml, ensure it's named exactly 'Move.toml' at root.");
+        } else {
+            addLog("> Using user-provided Move.toml");
+        }
+
+        const filesToCompile: Record<string, string> = {
+            ...currentFiles,
+            "Move.toml": currentFiles["Move.toml"] || `[package]
+name = "SpeedrunSui"
+version = "0.0.1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+speedrun = "0x0"
+`,
+        };
+
+        addLog(`> Compiling ${filename}...`); // Moved this log after file preparation
 
         try {
-            // Save current file to files object
-            const currentFiles = {
-                ...files,
-                [filename]: code
-            };
-
-            // Create Move.toml if not exists
-            const filesToCompile: Record<string, string> = {
-                ...currentFiles,
-                "Move.toml": currentFiles["Move.toml"] || `[package]\nname = "SpeedrunSui"\nversion = "0.0.1"\n\n[dependencies]\nSui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }\n\n[addresses]\nspeedrun = "0x0"`
-            };
-
             const result = await compileCode(filesToCompile);
 
             if (result.error) {
                 addLog("> ✗ Compilation failed:");
                 addLog(result.error);
+                // Clear build artifacts on failure
+                setBuildFiles({});
             } else {
                 addLog("> ✓ Compilation successful!");
-                addLog("> Build artifacts ready");
+
+                // Create build artifacts
+                // Create build artifacts
+                if (result.buildFiles) {
+                    setBuildFiles(result.buildFiles);
+                    addLog("> Build artifacts created in build/ folder");
+
+                    const moduleCount = Object.keys(result.buildFiles).filter(k => k.endsWith('.mv')).length;
+                    addLog(`> Generated ${moduleCount} module(s)`);
+                } else if (result.modules) {
+                    // Legacy support
+                    const buildArtifacts: Record<string, string> = {};
+                    result.modules.forEach((moduleBase64: string, index: number) => {
+                        const moduleName = `module_${index}.mv`;
+                        buildArtifacts[`build/bytecode_modules/${moduleName}`] = moduleBase64;
+                    });
+
+                    if (result.dependencies) {
+                        const depsContent = result.dependencies.join('\n');
+                        buildArtifacts['build/dependencies.txt'] = depsContent;
+                    }
+
+                    if (result.digest) {
+                        // Digest handling (check if it's array or string)
+                        const digestHex = Array.isArray(result.digest)
+                            ? result.digest.map((b: number) => b.toString(16).padStart(2, '0')).join('')
+                            : String(result.digest);
+                        buildArtifacts['build/package_digest.txt'] = digestHex;
+                    }
+
+                    setBuildFiles(buildArtifacts);
+                    addLog("> Build artifacts created (legacy mode)");
+                }
+
                 if (result.bytecode) {
                     addLog(`> Bytecode size: ${result.bytecode.length} bytes`);
                 }
@@ -174,14 +250,79 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
     const handleDeploy = async () => {
         setIsLoading(true);
-        addLog(`> Deploying ${filename} to Sui network...`);
+        addLog(`> Deploying...`);
 
-        // Simulate deployment
-        setTimeout(() => {
-            addLog("> ✓ Deployment successful!");
-            addLog("> Package ID: 0x1234...abcd");
+        if (!currentAccount) {
+            addLog("> ⚠️ Error: Please connect your wallet first!");
             setIsLoading(false);
-        }, 2500);
+            return;
+        }
+
+        // 1. Identify modules to deploy from buildFiles
+        const buildKeys = Object.keys(buildFiles);
+        addLog(`> Debug: Inspecting ${buildKeys.length} build artifacts...`);
+        // Debug: Print first 5 keys
+        if (buildKeys.length > 0) {
+            addLog(`> Sample files: ${buildKeys.slice(0, 3).join(", ")} ...`);
+        }
+
+        // Filter out dependencies and non-bytecode files
+        const modulesToDeploy = Object.entries(buildFiles).filter(([path, content]) => {
+            // Check matching condition
+            const isMv = path.endsWith('.mv');
+            const isDep = path.includes('/dependencies/');
+
+            // Log if we find a potential candidate
+            if (isMv && !isDep) {
+                addLog(`> Found candidate: ${path}`);
+            }
+
+            return isMv && !isDep;
+        }).map(([_, content]) => content);
+
+        if (modulesToDeploy.length === 0) {
+            addLog("> ⚠️ Error: No compiled modules found to deploy.");
+            addLog("> Please ensure compilation was successful.");
+            addLog("> Tip: Check if package name in Move.toml matches module address.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const tx = new Transaction();
+            // Default dependencies: MoveStdlib(0x1), Sui(0x2)
+            // This is a simplification. Ideal solution parses BuildInfo.yaml.
+            const dependencies = ['0x1', '0x2'];
+
+            addLog(`> Found ${modulesToDeploy.length} modules to deploy.`);
+
+            const [upgradeCap] = tx.publish({
+                modules: modulesToDeploy.map(m => Array.from(fromBase64(m))),
+                dependencies: dependencies,
+            });
+
+            tx.transferObjects([upgradeCap], currentAccount.address);
+
+            addLog("> Requesting signature...");
+
+            signAndExecuteTransaction({
+                transaction: tx,
+            }, {
+                onSuccess: (result) => {
+                    addLog("> ✓ Deployment successful!");
+                    addLog(`> Digest: ${result.digest}`);
+                    setIsLoading(false);
+                },
+                onError: (error) => {
+                    addLog(`> ❌ Deployment failed: ${error.message}`);
+                    setIsLoading(false);
+                }
+            });
+
+        } catch (e: any) {
+            addLog(`> ❌ Error preparing transaction: ${e.message}`);
+            setIsLoading(false);
+        }
     };
 
     const handleClearTerminal = () => {
@@ -197,7 +338,7 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
             >
                 {/* File Explorer */}
                 <ResizablePanel defaultSize={18} minSize={12} maxSize={300}>
-                    <FileExplorer onFileSelect={handleFileSelect} selectedFile={selectedFile} />
+                    <FileExplorer onFileSelect={handleFileSelect} selectedFile={selectedFile} buildFiles={buildFiles} />
                 </ResizablePanel>
 
                 <ResizableHandle

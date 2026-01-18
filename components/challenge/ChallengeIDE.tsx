@@ -7,7 +7,11 @@ import { motion, AnimatePresence, useDragControls } from "framer-motion";
 
 const WebIDE = dynamic(() => import("@/components/WebIDE/WebIDE"), { ssr: false });
 
-export function ChallengeIDE() {
+interface ChallengeIDEProps {
+    challengeId?: string;
+}
+
+export function ChallengeIDE({ challengeId }: ChallengeIDEProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
     const dragControls = useDragControls();
@@ -126,7 +130,7 @@ export function ChallengeIDE() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1, transition: { delay: 0.25, duration: 0.2 } }}
                         >
-                            <WebIDE />
+                            <WebIDE challengeId={challengeId} />
                         </motion.div>
                     </motion.div>
                 )}
