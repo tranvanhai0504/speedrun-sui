@@ -102,7 +102,7 @@ export default function ChallengePage({
             </div>
 
             {/* Floating IDE Window */}
-            <ChallengeIDE />
+            <ChallengeIDE challengeId={id} />
         </div>
     );
 }

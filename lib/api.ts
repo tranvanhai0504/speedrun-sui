@@ -76,8 +76,14 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
         throw new Error(error.message || error.error || 'API request failed');
     }
 
-    const result = await response.json();
-    return result.data !== undefined ? result.data : result;
+    const text = await response.text();
+    try {
+        const result = JSON.parse(text);
+        return result.data !== undefined ? result.data : result;
+    } catch (e: any) {
+        console.error("API Error: Failed to parse JSON", text.substring(0, 500));
+        throw new Error(`Bad JSON response: ${e.message}. Raw: ${text.substring(0, 100)}...`);
+    }
 }
 
 export async function getNonce(address: string): Promise<{ nonce: string, message: string }> {
@@ -192,28 +198,21 @@ export interface CompileRequest {
 }
 
 export interface CompileResponse {
-    bytecode: string;
-    error: string;
+    bytecode?: string;
+    error?: string;
+    buildFiles?: Record<string, string>;
+    stdout?: string;
+    // Legacy fields (backup if backend update fails)
+    modules?: string[];
+    dependencies?: string[];
+    digest?: number[]; // digest is usually string, but legacy might be string[] or number[]? Check backend.
 }
 
 export async function compileCode(files: Record<string, string>): Promise<CompileResponse> {
-    const response = await fetch(`${API_URL}/ide/compile`, {
+    return apiFetch('/ide/compile', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ files }),
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Compilation failed' }));
-        return {
-            bytecode: '',
-            error: error.error || error.message || 'Compilation failed'
-        };
-    }
-
-    return response.json();
 }
 
 export interface IDEProject {
@@ -221,6 +220,7 @@ export interface IDEProject {
     name: string;
     description?: string;
     files: Record<string, string>;
+    challenge_id?: string; // Link to challenge
     created_at?: number;
     updated_at?: number;
 }
