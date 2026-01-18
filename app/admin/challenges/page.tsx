@@ -2,13 +2,11 @@
 
 import { useChallenges, useAdminChallengeMutation } from "@/hooks/useApi";
 import { useState } from "react";
-import { Plus, Edit, Trash2, Search, MoreVertical, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Challenge } from "@/lib/api";
+import { AdminChallengeDialog } from "@/components/dialogs/AdminChallengeDialog";
 
 export default function ChallengesAdminPage() {
     const { data: challenges, isLoading } = useChallenges();
@@ -17,16 +15,6 @@ export default function ChallengesAdminPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingChallenge, setEditingChallenge] = useState<Partial<Challenge> | null>(null);
 
-    // Form Stats
-    const [formData, setFormData] = useState<Partial<Challenge>>({
-        title: "",
-        description: "",
-        xp_reward: 100,
-        difficulty: "EASY",
-        required_modules: [],
-        status: "locked",
-    });
-
     const filteredChallenges = challenges?.filter(c =>
         c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.challenge_id.includes(searchTerm)
@@ -34,31 +22,21 @@ export default function ChallengesAdminPage() {
 
     const handleEdit = (challenge: Challenge) => {
         setEditingChallenge(challenge);
-        setFormData(challenge);
         setIsDialogOpen(true);
     };
 
     const handleCreate = () => {
         setEditingChallenge(null);
-        setFormData({
-            title: "",
-            description: "",
-            xp_reward: 100,
-            difficulty: "EASY",
-            required_modules: [],
-            status: "locked",
-        });
         setIsDialogOpen(true);
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (formData: Partial<Challenge>) => {
         try {
             if (editingChallenge && editingChallenge.challenge_id) {
                 await updateMutation.mutateAsync({ id: editingChallenge.challenge_id, data: formData });
             } else {
                 await createMutation.mutateAsync({ ...formData, challenge_id: `challenge-${Date.now()}` } as Challenge);
             }
-            setIsDialogOpen(false);
         } catch (error) {
             console.error("Failed to save challenge", error);
         }
@@ -113,8 +91,8 @@ export default function ChallengesAdminPage() {
                                         <h3 className="font-bold text-[#0F2854]">{challenge.title}</h3>
                                         <div className="flex items-center gap-2 text-xs text-gray-500">
                                             <span className={`px-2 py-0.5 rounded-full ${challenge.difficulty === "EASY" ? "bg-green-100 text-green-700" :
-                                                    challenge.difficulty === "MEDIUM" ? "bg-yellow-100 text-yellow-700" :
-                                                        "bg-red-100 text-red-700"
+                                                challenge.difficulty === "MEDIUM" ? "bg-yellow-100 text-yellow-700" :
+                                                    "bg-red-100 text-red-700"
                                                 }`}>
                                                 {challenge.difficulty}
                                             </span>
@@ -139,85 +117,12 @@ export default function ChallengesAdminPage() {
                 )}
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl bg-white">
-                    <DialogHeader>
-                        <DialogTitle>{editingChallenge ? "Edit Challenge" : "Create Challenge"}</DialogTitle>
-                        <DialogDescription>
-                            Configure the challenge details below.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>XP Reward</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.xp_reward}
-                                    onChange={(e) => setFormData({ ...formData, xp_reward: Number(e.target.value) })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Difficulty</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.difficulty}
-                                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
-                                >
-                                    <option value="EASY">EASY</option>
-                                    <option value="MEDIUM">MEDIUM</option>
-                                    <option value="HARD">HARD</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Status (Initial)</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={formData.status}
-                                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                                >
-                                    <option value="locked">Locked</option>
-                                    <option value="open">Open</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Description</Label>
-                            <Textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Markdown Instructions</Label>
-                            <Textarea
-                                className="min-h-[150px] font-mono"
-                                value={formData.instructions || ""}
-                                onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                                placeholder="# Instructions..."
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSubmit} className="bg-[#0F2854] text-white">Save Challenge</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <AdminChallengeDialog
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                challenge={editingChallenge}
+                onSubmit={handleSubmit}
+            />
         </div>
     );
 }

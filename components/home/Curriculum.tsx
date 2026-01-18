@@ -132,6 +132,9 @@ export function Curriculum() {
                                                     title: challenge.title,
                                                     description: challenge.description,
                                                     status: challenge.status || "locked",
+                                                    difficulty: challenge.difficulty,
+                                                    xp_reward: challenge.xp_reward,
+                                                    submission_count: challenge.submission_count,
                                                 }} />
                                             </motion.div>
                                         )}
@@ -182,6 +185,9 @@ export function Curriculum() {
                                                     title: challenge.title,
                                                     description: challenge.description,
                                                     status: challenge.status || "locked",
+                                                    difficulty: challenge.difficulty,
+                                                    xp_reward: challenge.xp_reward,
+                                                    submission_count: challenge.submission_count,
                                                 }} />
                                             </motion.div>
                                         )}
@@ -200,6 +206,9 @@ export function Curriculum() {
                                                 title: challenge.title,
                                                 description: challenge.description,
                                                 status: challenge.status || "locked",
+                                                difficulty: challenge.difficulty,
+                                                xp_reward: challenge.xp_reward,
+                                                submission_count: challenge.submission_count,
                                             }} />
                                         </motion.div>
                                     </div>

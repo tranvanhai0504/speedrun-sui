@@ -11,7 +11,6 @@ export function Footer() {
                     </div>
                     SPEEDRUN SUI
                 </div>
-                <p className="text-gray-600 font-bold">© 2024 Speedrun Sui. Built with ❤️ for the community.</p>
                 <div className="flex gap-4">
                     <Button variant="ghost" size="icon" className="rounded-lg border-2 border-black hover:bg-primary hover:text-white transition-colors">
                         <Users size={20} />

@@ -10,6 +10,7 @@ export interface Challenge {
     required_modules: string[];
     status?: "locked" | "open" | "completed";
     instructions?: string; // Markdown content
+    submission_count?: number;
 }
 
 export interface BuilderProfile {
