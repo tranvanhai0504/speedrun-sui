@@ -8,6 +8,7 @@ type CardNavLink = {
   label: string;
   href: string;
   ariaLabel: string;
+  linkTarget: string;
 };
 
 export type CardNavItem = {
@@ -241,6 +242,7 @@ const CardNav: React.FC<CardNavProps> = ({
                     href={lnk.href}
                     aria-label={lnk.ariaLabel}
                     onClick={toggleMenu}
+                    target={lnk.linkTarget}
                   >
                     <GoArrowUpRight className="nav-card-link-icon shrink-0" aria-hidden="true" />
                     {lnk.label}

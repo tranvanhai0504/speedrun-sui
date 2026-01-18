@@ -3,12 +3,10 @@
 import CardNav, { CardNavItem } from "@/components/CardNav";
 import { useAuth } from "@/hooks/useAuth";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/UserMenu";
 
 export function Navbar() {
     const { isAuthenticated, signIn, isAuthenticating, signOut, isAdmin } = useAuth();
-    console.log("admin", isAdmin);
     const currentAccount = useCurrentAccount();
 
     const navItems: CardNavItem[] = [
@@ -17,9 +15,9 @@ export function Navbar() {
             bgColor: "#BDE8F5", // Pale Cyan
             textColor: "#0F2854", // Dark Blue
             links: [
-                { label: "All Challenges", href: "/challenges", ariaLabel: "View all challenges" },
-                { label: "Documentation", href: "#", ariaLabel: "Read documentation" },
-                { label: "Tutorials", href: "#", ariaLabel: "Watch tutorials" },
+                { label: "All Challenges", href: "/challenges", ariaLabel: "View all challenges", linkTarget: "_self" },
+                { label: "Documentation", href: "#", ariaLabel: "Read documentation", linkTarget: "_self" },
+                { label: "Tutorials", href: "#", ariaLabel: "Watch tutorials", linkTarget: "_self" },
             ],
         },
         {
@@ -27,9 +25,9 @@ export function Navbar() {
             bgColor: "#4988C4", // Light Blue
             textColor: "#FFFFFF",
             links: [
-                { label: "Leaderboard", href: "/leaderboard", ariaLabel: "View leaderboard" },
-                { label: "Builders Directory", href: "#", ariaLabel: "Find other builders" },
-                { label: "Discord", href: "#", ariaLabel: "Join Discord" },
+                { label: "Leaderboard", href: "/leaderboard", ariaLabel: "View leaderboard", linkTarget: "_self" },
+                { label: "Builders Directory", href: "#", ariaLabel: "Find other builders", linkTarget: "_blank" },
+                { label: "Discord", href: "#", ariaLabel: "Join Discord", linkTarget: "_blank" },
             ],
         },
         {
@@ -37,9 +35,9 @@ export function Navbar() {
             bgColor: "#1C4D8D", // Medium Blue
             textColor: "#FFFFFF",
             links: [
-                { label: "Sui Documentation", href: "#", ariaLabel: "Official Sui Docs" },
-                { label: "Move Book", href: "#", ariaLabel: "Move Language Book" },
-                { label: "Faucet", href: "#", ariaLabel: "Testnet Faucet" },
+                { label: "Sui Documentation", href: "https://docs.sui.io/guides", ariaLabel: "Official Sui Docs", linkTarget: "_blank" },
+                { label: "Move Book", href: "https://move-book.com/", ariaLabel: "Move Language Book", linkTarget: "_blank" },
+                { label: "Faucet", href: "https://faucet.sui.io/", ariaLabel: "Testnet Faucet", linkTarget: "_blank" },
             ],
         },
     ];
