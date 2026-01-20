@@ -163,13 +163,13 @@ export function Curriculum() {
                                         viewport={{ once: true }}
                                         transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
                                         className={cn(
-                                            "absolute top-1/2 h-1 bg-[#0F2854] hidden md:block w-[5%] origin-left",
+                                            "absolute top-1/2 h-1 bg-[#0F2854] hidden md:block w-[5%] origin-left -z-10",
                                             isEven ? "left-[45%] origin-right" : "right-[45%]"
                                         )} />
 
                                     {/* Desktop: Right side content for odd, Empty for even */}
                                     <div className={cn(
-                                        "w-full md:w-[45%] flex",
+                                        "w-full md:w-[45%] flex relative !z-30",
                                         !isEven ? "justify-start order-3 pl-28" : "order-1 hidden md:flex"
                                     )}>
                                         {!isEven && (

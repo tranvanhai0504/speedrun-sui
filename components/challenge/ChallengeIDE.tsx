@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Terminal, Maximize2, Minimize2, Minus } from "lucide-react";
 import { motion, AnimatePresence, useDragControls, useMotionValue } from "framer-motion";
@@ -17,6 +17,18 @@ export function ChallengeIDE({ challengeId }: ChallengeIDEProps) {
     const dragControls = useDragControls();
     const x = useMotionValue(0);
     const y = useMotionValue(0);
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [isOpen]);
+
 
     return (
         <>
