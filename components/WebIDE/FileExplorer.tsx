@@ -110,10 +110,22 @@ function FileTreeNode({
             <div
                 draggable
                 onDragStart={() => onDragStart(node)}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(true);
+                    onDragOver(e);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                    onDrop(node);
+                }}
                 className={cn(
                     "flex items-center gap-2 py-1.5 px-2 cursor-pointer group",
                     "hover:bg-[#2a2d39] transition-colors rounded",
-                    isSelected && "bg-[#2a2d39]"
+                    isSelected && "bg-[#2a2d39]",
+                    isDragOver && "bg-[#4988C4]/20 border border-[#4988C4]"
                 )}
                 style={{ paddingLeft: `${8 + level * 16}px` }}
                 onClick={() => onFileSelect(node.path, node.content || "")}
@@ -291,8 +303,34 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
     };
 
     const handleDrop = (targetNode: FileNode) => {
-        if (!draggedNode || draggedNode === targetNode) return;
-        if (targetNode.type !== "folder") return;
+        if (!draggedNode || draggedNode.path === targetNode.path) return;
+
+        let targetPath = targetNode.path;
+
+        // If dropping on a file, target its parent folder
+        if (targetNode.type === "file") {
+            const lastSlash = targetNode.path.lastIndexOf('/');
+            targetPath = lastSlash === -1 ? "" : targetNode.path.substring(0, lastSlash);
+        }
+
+        // Prevent moving into self or children
+        if (draggedNode.type === "folder" && (targetPath === draggedNode.path || targetPath.startsWith(draggedNode.path + '/'))) {
+            return;
+        }
+
+        // Prevent moving to same location
+        const draggedParent = draggedNode.path.lastIndexOf('/') === -1 ? "" : draggedNode.path.substring(0, draggedNode.path.lastIndexOf('/'));
+        if (draggedParent === targetPath) return;
+
+        // Recursive helper to update paths
+        const updateNodePaths = (node: FileNode, newBasePath: string): FileNode => {
+            const newPath = newBasePath ? `${newBasePath}/${node.name}` : node.name;
+            return {
+                ...node,
+                path: newPath,
+                children: node.children?.map(child => updateNodePaths(child, newPath))
+            };
+        };
 
         // Remove from old location
         const removeNode = (nodes: FileNode[], path: string): FileNode[] => {
@@ -306,18 +344,17 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
         };
 
         // Add to new location
-        const addNode = (nodes: FileNode[], targetPath: string, nodeToAdd: FileNode): FileNode[] => {
+        const addNode = (nodes: FileNode[], targetFolder: string, nodeToAdd: FileNode): FileNode[] => {
             return nodes.map(n => {
-                if (n.path === targetPath && n.type === "folder") {
-                    const newPath = `${targetPath}/${nodeToAdd.name}`;
-                    const updatedNode = { ...nodeToAdd, path: newPath };
+                if (n.path === targetFolder && n.type === "folder") {
+                    const updatedNode = updateNodePaths(nodeToAdd, targetFolder);
                     return {
                         ...n,
                         children: [...(n.children || []), updatedNode]
                     };
                 }
                 if (n.children) {
-                    return { ...n, children: addNode(n.children, targetPath, nodeToAdd) };
+                    return { ...n, children: addNode(n.children, targetFolder, nodeToAdd) };
                 }
                 return n;
             });
@@ -326,11 +363,11 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
         let updatedFiles = removeNode([...files], draggedNode.path);
 
         // If dropping to root
-        if (targetNode.path === "") {
-            const newPath = draggedNode.name;
-            updatedFiles.push({ ...draggedNode, path: newPath });
+        if (targetPath === "") {
+            const updatedNode = updateNodePaths(draggedNode, "");
+            updatedFiles.push(updatedNode);
         } else {
-            updatedFiles = addNode(updatedFiles, targetNode.path, draggedNode);
+            updatedFiles = addNode(updatedFiles, targetPath, draggedNode);
         }
 
         setFiles(updatedFiles);
@@ -347,6 +384,19 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
         e.preventDefault();
         if (!draggedNode) return;
 
+        // Prevent moving if already in root
+        const draggedParent = draggedNode.path.lastIndexOf('/') === -1 ? "" : draggedNode.path.substring(0, draggedNode.path.lastIndexOf('/'));
+        if (draggedParent === "") return;
+
+        const updateNodePaths = (node: FileNode, newBasePath: string): FileNode => {
+            const newPath = newBasePath ? `${newBasePath}/${node.name}` : node.name;
+            return {
+                ...node,
+                path: newPath,
+                children: node.children?.map(child => updateNodePaths(child, newPath))
+            };
+        };
+
         // Remove from old location
         const removeNode = (nodes: FileNode[], path: string): FileNode[] => {
             return nodes.filter(n => {
@@ -359,8 +409,8 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
         };
 
         let updatedFiles = removeNode([...files], draggedNode.path);
-        const newPath = draggedNode.name;
-        updatedFiles.push({ ...draggedNode, path: newPath });
+        const updatedNode = updateNodePaths(draggedNode, "");
+        updatedFiles.push(updatedNode);
 
         setFiles(updatedFiles);
         if (onFilesChange) onFilesChange(updatedFiles);
@@ -455,8 +505,8 @@ export default function FileExplorer({ onFileSelect, selectedFile, onFilesChange
                         node={buildFolderNode}
                         onFileSelect={onFileSelect}
                         selectedFile={selectedFile}
-                        onDragStart={() => { }} // Build files are read-only
-                        onDrop={() => { }}
+                        onDragStart={handleDragStart} // Allow dragging copies from build
+                        onDrop={() => { }} // Prevent dropping into build folder
                         onDragOver={() => { }}
                     />
                 )}

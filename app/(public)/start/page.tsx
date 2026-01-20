@@ -255,11 +255,11 @@ export default function StartPage() {
                                 <CheckCircle2 size={32} className="text-green-500" />
                             </div>
                             <div className="flex-grow">
-                                <h4 className="font-black text-lg text-black">Challenge 0: Hello World</h4>
+                                <h4 className="font-black text-lg text-black">Challenge 1: Hello World</h4>
                                 <p className="text-sm font-bold opacity-80 text-black">Learn the basics of Move & Scaffold-Sui</p>
                             </div>
                             <Button size="lg" className="bg-black text-white hover:bg-gray-800 border-2 border-black font-black uppercase" asChild>
-                                <Link href="/challenges/0">
+                                <Link href="/challenges/1">
                                     Start Now
                                 </Link>
                             </Button>

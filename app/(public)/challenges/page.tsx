@@ -10,6 +10,8 @@ export default function ChallengesPage() {
     const { data: challenges, isLoading, error } = useChallenges();
     const { data: profile, isLoading: isLoadingProfile, refetch } = useBuilderProfile(currentAccount?.address || "");
 
+    console.log(challenges)
+
     const personalChallenges = challenges?.map((challenge, index) => {
         const completedChallenges = profile?.completed_challenges || [];
         const isCompleted = completedChallenges.includes(challenge.challenge_id);
@@ -61,6 +63,8 @@ export default function ChallengesPage() {
                                     title: challenge.title,
                                     description: challenge.description,
                                     status: challenge.status || "locked",
+                                    xp_reward: challenge.xp_reward,
+                                    submission_count: challenge.submission_count,
                                 }} />
                             </div>
                         ))
