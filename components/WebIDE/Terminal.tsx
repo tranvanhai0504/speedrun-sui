@@ -38,7 +38,8 @@ export default function Terminal({ logs, onClear }: TerminalProps) {
                                 log.toLowerCase().includes('error') ? 'text-[#f87171]' :
                                     log.toLowerCase().includes('success') || log.includes('✓') ? 'text-[#4ade80]' :
                                         log.startsWith('>') ? 'text-[#60a5fa]' :
-                                            'text-[#9ca3af]'
+                                            log.startsWith('✗') ? 'text-[#f87171]' :
+                                                'text-[#9ca3af]'
                             )}
                         >
                             {log}

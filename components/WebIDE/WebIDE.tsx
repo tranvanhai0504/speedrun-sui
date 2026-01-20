@@ -84,7 +84,7 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
 
     const handleSaveProject = async () => {
         if (!isAuthenticated) {
-            addLog("> Please sign in to save projects");
+            addLog("✗ Please sign in to save projects");
             return;
         }
 
@@ -115,7 +115,6 @@ export default function WebIDE({ initialCode = "// Start coding...", onCodeChang
             }
 
             addLog("> ✓ Project saved successfully!");
-            addLog(`> Project ID: ${savedProject.id}`);
         } catch (error: any) {
             addLog("> ✗ Failed to save project:");
             addLog(error.message || "Unknown error");
@@ -330,7 +329,7 @@ speedrun = "0x0"
     };
 
     return (
-        <div className="relative transition-all duration-300">
+        <div className="relative transition-all duration-300 h-full">
 
             <ResizablePanelGroup
                 orientation="horizontal"

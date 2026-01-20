@@ -88,7 +88,7 @@ export function ChallengeIDE({ challengeId }: ChallengeIDEProps) {
                         }}
                         className={`fixed z-60 bg-white rounded-xl border-4 border-[#0F2854] shadow-[8px_8px_0px_0px_#0F2854] flex flex-col ${isMaximized
                             ? "inset-4"
-                            : "bottom-24 left-6 right-6 md:left-6 md:right-auto md:w-[90vw] h-[600px]"
+                            : "bottom-24 left-6 right-6 md:left-6 md:right-auto md:w-[90vw] h-[600px] 2xl:h-[800px]"
                             }`}
                     >
                         {/* Window Header */}
